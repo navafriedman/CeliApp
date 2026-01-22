@@ -4,7 +4,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-async function createTursoClient() {
+async function createTursoClient(): Promise<PrismaClient> {
   const { PrismaLibSQL } = await import('@prisma/adapter-libsql')
   const { createClient } = await import('@libsql/client/web')
 
@@ -16,16 +16,16 @@ async function createTursoClient() {
   return new PrismaClient({ adapter })
 }
 
-function createLocalClient() {
+function createLocalClient(): PrismaClient {
   return new PrismaClient()
 }
 
 // For Turso, we need to create the client lazily
 let prismaPromise: Promise<PrismaClient> | null = null
 
-export function getPrisma(): Promise<PrismaClient> {
+export async function getPrisma(): Promise<PrismaClient> {
   if (globalForPrisma.prisma) {
-    return Promise.resolve(globalForPrisma.prisma)
+    return globalForPrisma.prisma
   }
 
   if (!prismaPromise) {
@@ -34,17 +34,12 @@ export function getPrisma(): Promise<PrismaClient> {
     } else {
       prismaPromise = Promise.resolve(createLocalClient())
     }
-
-    prismaPromise.then(client => {
-      if (process.env.NODE_ENV !== 'production') {
-        globalForPrisma.prisma = client
-      }
-    })
   }
 
-  return prismaPromise
-}
+  const client = await prismaPromise
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = client
+  }
 
-// For backwards compatibility - but this won't work with Turso
-// Use getPrisma() instead
-export const prisma = new PrismaClient()
+  return client
+}
