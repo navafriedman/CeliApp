@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf5ff;
+  --foreground: #1e1b4b;
+
+  /* Playful color palette */
+  --coral: #ff6b6b;
+  --coral-light: #ffa5a5;
+  --teal: #4ecdc4;
+  --teal-light: #a8e6cf;
+  --purple: #9b5de5;
+  --purple-light: #c9a7eb;
+  --yellow: #fee440;
+  --yellow-light: #fff3b0;
+  --pink: #f15bb5;
+  --blue: #00bbf9;
 }
 
 @theme inline {
@@ -12,15 +24,137 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #fdf4ff 100%);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+/* Fun gradient backgrounds */
+.gradient-coral { background: linear-gradient(135deg, #ff6b6b 0%, #ffa5a5 100%); }
+.gradient-teal { background: linear-gradient(135deg, #4ecdc4 0%, #a8e6cf 100%); }
+.gradient-purple { background: linear-gradient(135deg, #9b5de5 0%, #c9a7eb 100%); }
+.gradient-yellow { background: linear-gradient(135deg, #fee440 0%, #fff3b0 100%); }
+.gradient-pink { background: linear-gradient(135deg, #f15bb5 0%, #ff99d6 100%); }
+.gradient-blue { background: linear-gradient(135deg, #00bbf9 0%, #7de2fc 100%); }
+.gradient-hero { background: linear-gradient(135deg, #9b5de5 0%, #f15bb5 50%, #ff6b6b 100%); }
+
+/* Blob decorations */
+.blob {
+  border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+  animation: blob-morph 8s ease-in-out infinite;
+}
+
+@keyframes blob-morph {
+  0%, 100% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+  25% { border-radius: 58% 42% 30% 70% / 55% 45% 55% 45%; }
+  50% { border-radius: 30% 70% 58% 42% / 45% 55% 45% 55%; }
+  75% { border-radius: 70% 30% 42% 58% / 55% 45% 55% 45%; }
+}
+
+/* Float animation */
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Bounce animation */
+.bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Card hover effects */
+.card-pop {
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card-pop:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15);
+}
+
+/* Wiggle animation for icons */
+.wiggle:hover {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+
+/* Shimmer effect */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Rainbow text */
+.text-rainbow {
+  background: linear-gradient(90deg, #ff6b6b, #f15bb5, #9b5de5, #00bbf9, #4ecdc4, #fee440);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainbow-shift 3s linear infinite;
+}
+
+@keyframes rainbow-shift {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Button styles */
+.btn-playful {
+  background: linear-gradient(135deg, #9b5de5 0%, #f15bb5 100%);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(155, 93, 229, 0.3);
+}
+
+.btn-playful:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(155, 93, 229, 0.4);
+}
+
+/* Pill badges */
+.badge-coral { background: #fff1f1; color: #ff6b6b; border: 1px solid #ffa5a5; }
+.badge-teal { background: #e6fff9; color: #2db3a8; border: 1px solid #4ecdc4; }
+.badge-purple { background: #f5edff; color: #9b5de5; border: 1px solid #c9a7eb; }
+.badge-pink { background: #fff0f8; color: #f15bb5; border: 1px solid #ff99d6; }
+
+/* Safe/Unsafe indicators */
+.safe-badge {
+  background: linear-gradient(135deg, #4ecdc4 0%, #a8e6cf 100%);
+  color: white;
+}
+
+.unsafe-badge {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffa5a5 100%);
+  color: white;
 }
