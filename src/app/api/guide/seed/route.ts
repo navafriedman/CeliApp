@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 const glutenData = [
@@ -55,16 +55,21 @@ const glutenData = [
 ];
 
 export async function POST() {
-  // Check if data already exists
-  const count = await prisma.glutenInfo.count();
-  if (count > 0) {
-    return NextResponse.json({ message: 'Data already seeded', count });
+  try {
+    const prisma = await getPrisma();
+    // Check if data already exists
+    const count = await prisma.glutenInfo.count();
+    if (count > 0) {
+      return NextResponse.json({ message: 'Data already seeded', count });
+    }
+
+    // Insert all data
+    await prisma.glutenInfo.createMany({
+      data: glutenData,
+    });
+
+    return NextResponse.json({ message: 'Seeded successfully', count: glutenData.length });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
-
-  // Insert all data
-  await prisma.glutenInfo.createMany({
-    data: glutenData,
-  });
-
-  return NextResponse.json({ message: 'Seeded successfully', count: glutenData.length });
 }

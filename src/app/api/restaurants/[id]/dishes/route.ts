@@ -1,37 +1,46 @@
-import { prisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const body = await request.json();
+  try {
+    const prisma = await getPrisma();
+    const { id } = await params;
+    const body = await request.json();
 
-  const dish = await prisma.dish.create({
-    data: {
-      name: body.name,
-      description: body.description || null,
-      isSafe: body.isSafe ?? true,
-      notes: body.notes || null,
-      rating: body.rating || null,
-      restaurantId: id,
-    },
-  });
+    const dish = await prisma.dish.create({
+      data: {
+        name: body.name,
+        description: body.description || null,
+        isSafe: body.isSafe ?? true,
+        notes: body.notes || null,
+        rating: body.rating || null,
+        restaurantId: id,
+      },
+    });
 
-  return NextResponse.json(dish, { status: 201 });
+    return NextResponse.json(dish, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const body = await request.json();
+  try {
+    const prisma = await getPrisma();
+    const body = await request.json();
 
-  await prisma.dish.delete({
-    where: { id: body.dishId },
-  });
+    await prisma.dish.delete({
+      where: { id: body.dishId },
+    });
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }

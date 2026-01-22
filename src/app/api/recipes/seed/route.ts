@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 // Gluten-free vegetarian/vegan recipes
@@ -376,16 +376,21 @@ Toppings: avocado, cilantro, lime`,
 ];
 
 export async function POST() {
-  // Check if recipes already exist
-  const count = await prisma.recipe.count();
-  if (count > 0) {
-    return NextResponse.json({ message: 'Recipes already seeded', count });
+  try {
+    const prisma = await getPrisma();
+    // Check if recipes already exist
+    const count = await prisma.recipe.count();
+    if (count > 0) {
+      return NextResponse.json({ message: 'Recipes already seeded', count });
+    }
+
+    // Insert all recipes
+    await prisma.recipe.createMany({
+      data: recipeData,
+    });
+
+    return NextResponse.json({ message: 'Seeded successfully', count: recipeData.length });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
-
-  // Insert all recipes
-  await prisma.recipe.createMany({
-    data: recipeData,
-  });
-
-  return NextResponse.json({ message: 'Seeded successfully', count: recipeData.length });
 }

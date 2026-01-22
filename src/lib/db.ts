@@ -1,26 +1,50 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSQL } from '@prisma/adapter-libsql'
-import { createClient } from '@libsql/client/web'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-function createPrismaClient() {
-  // Use Turso in production, SQLite locally
-  if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
-    const libsql = createClient({
-      url: process.env.TURSO_DATABASE_URL,
-      authToken: process.env.TURSO_AUTH_TOKEN,
-    })
-    const adapter = new PrismaLibSQL(libsql)
-    return new PrismaClient({ adapter })
-  }
+async function createTursoClient() {
+  const { PrismaLibSQL } = await import('@prisma/adapter-libsql')
+  const { createClient } = await import('@libsql/client/web')
 
-  // Local development with SQLite
+  const libsql = createClient({
+    url: process.env.TURSO_DATABASE_URL!,
+    authToken: process.env.TURSO_AUTH_TOKEN!,
+  })
+  const adapter = new PrismaLibSQL(libsql)
+  return new PrismaClient({ adapter })
+}
+
+function createLocalClient() {
   return new PrismaClient()
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+// For Turso, we need to create the client lazily
+let prismaPromise: Promise<PrismaClient> | null = null
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+export function getPrisma(): Promise<PrismaClient> {
+  if (globalForPrisma.prisma) {
+    return Promise.resolve(globalForPrisma.prisma)
+  }
+
+  if (!prismaPromise) {
+    if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
+      prismaPromise = createTursoClient()
+    } else {
+      prismaPromise = Promise.resolve(createLocalClient())
+    }
+
+    prismaPromise.then(client => {
+      if (process.env.NODE_ENV !== 'production') {
+        globalForPrisma.prisma = client
+      }
+    })
+  }
+
+  return prismaPromise
+}
+
+// For backwards compatibility - but this won't work with Turso
+// Use getPrisma() instead
+export const prisma = new PrismaClient()

@@ -1,41 +1,51 @@
-import { prisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const search = searchParams.get('search');
-  const category = searchParams.get('category');
-  const status = searchParams.get('status');
+  try {
+    const prisma = await getPrisma();
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get('search');
+    const category = searchParams.get('category');
+    const status = searchParams.get('status');
 
-  const items = await prisma.glutenInfo.findMany({
-    where: {
-      ...(search && {
-        OR: [
-          { name: { contains: search } },
-          { description: { contains: search } },
-        ],
-      }),
-      ...(category && { category }),
-      ...(status && { status }),
-    },
-    orderBy: { name: 'asc' },
-  });
+    const items = await prisma.glutenInfo.findMany({
+      where: {
+        ...(search && {
+          OR: [
+            { name: { contains: search } },
+            { description: { contains: search } },
+          ],
+        }),
+        ...(category && { category }),
+        ...(status && { status }),
+      },
+      orderBy: { name: 'asc' },
+    });
 
-  return NextResponse.json(items);
+    return NextResponse.json(items);
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  try {
+    const prisma = await getPrisma();
+    const body = await request.json();
 
-  const item = await prisma.glutenInfo.create({
-    data: {
-      name: body.name,
-      category: body.category,
-      status: body.status,
-      description: body.description || null,
-      tips: body.tips || null,
-    },
-  });
+    const item = await prisma.glutenInfo.create({
+      data: {
+        name: body.name,
+        category: body.category,
+        status: body.status,
+        description: body.description || null,
+        tips: body.tips || null,
+      },
+    });
 
-  return NextResponse.json(item, { status: 201 });
+    return NextResponse.json(item, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }

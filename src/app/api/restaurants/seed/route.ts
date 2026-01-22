@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 // GF-friendly restaurants in and around 11216 (Bed-Stuy/Crown Heights/Bushwick Brooklyn)
@@ -192,24 +192,29 @@ const restaurantData = [
 ];
 
 export async function POST() {
-  // Check if restaurants already exist
-  const count = await prisma.restaurant.count();
-  if (count > 0) {
-    return NextResponse.json({ message: 'Restaurants already seeded', count });
-  }
+  try {
+    const prisma = await getPrisma();
+    // Check if restaurants already exist
+    const count = await prisma.restaurant.count();
+    if (count > 0) {
+      return NextResponse.json({ message: 'Restaurants already seeded', count });
+    }
 
-  // Insert all restaurants with their dishes
-  for (const restaurant of restaurantData) {
-    const { dishes, ...restaurantInfo } = restaurant;
-    await prisma.restaurant.create({
-      data: {
-        ...restaurantInfo,
-        dishes: {
-          create: dishes,
+    // Insert all restaurants with their dishes
+    for (const restaurant of restaurantData) {
+      const { dishes, ...restaurantInfo } = restaurant;
+      await prisma.restaurant.create({
+        data: {
+          ...restaurantInfo,
+          dishes: {
+            create: dishes,
+          },
         },
-      },
-    });
-  }
+      });
+    }
 
-  return NextResponse.json({ message: 'Seeded successfully', count: restaurantData.length });
+    return NextResponse.json({ message: 'Seeded successfully', count: restaurantData.length });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }

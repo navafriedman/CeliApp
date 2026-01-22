@@ -1,31 +1,41 @@
-import { prisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET() {
-  const restaurants = await prisma.restaurant.findMany({
-    include: { dishes: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  try {
+    const prisma = await getPrisma();
+    const restaurants = await prisma.restaurant.findMany({
+      include: { dishes: true },
+      orderBy: { createdAt: 'desc' },
+    });
 
-  return NextResponse.json(restaurants);
+    return NextResponse.json(restaurants);
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  try {
+    const prisma = await getPrisma();
+    const body = await request.json();
 
-  const restaurant = await prisma.restaurant.create({
-    data: {
-      name: body.name,
-      address: body.address || null,
-      phone: body.phone || null,
-      website: body.website || null,
-      cuisineType: body.cuisineType || null,
-      glutenFreeMenu: body.glutenFreeMenu || false,
-      safetyRating: body.safetyRating || null,
-      notes: body.notes || null,
-      lastVisited: body.lastVisited ? new Date(body.lastVisited) : null,
-    },
-  });
+    const restaurant = await prisma.restaurant.create({
+      data: {
+        name: body.name,
+        address: body.address || null,
+        phone: body.phone || null,
+        website: body.website || null,
+        cuisineType: body.cuisineType || null,
+        glutenFreeMenu: body.glutenFreeMenu || false,
+        safetyRating: body.safetyRating || null,
+        notes: body.notes || null,
+        lastVisited: body.lastVisited ? new Date(body.lastVisited) : null,
+      },
+    });
 
-  return NextResponse.json(restaurant, { status: 201 });
+    return NextResponse.json(restaurant, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }
