@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Food Diary - Track meals and how you feel
+model FoodEntry {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  mealType    String   // breakfast, lunch, dinner, snack
+  description String
+  ingredients String   // comma-separated list
+  isSafe      Boolean  @default(true)
+  notes       String?
+  reaction    String?  // any symptoms or how you felt
+  rating      Int?     // 1-5 how good the meal was
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Recipe Box - Save gluten-free recipes
+model Recipe {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  ingredients  String   // stored as JSON string
+  instructions String
+  prepTime     Int?     // minutes
+  cookTime     Int?     // minutes
+  servings     Int?
+  category     String?  // breakfast, main, dessert, etc.
+  source       String?  // URL or book name
+  notes        String?
+  isFavorite   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Restaurant Tracker - Safe places to eat
+model Restaurant {
+  id              String   @id @default(cuid())
+  name            String
+  address         String?
+  phone           String?
+  website         String?
+  cuisineType     String?
+  glutenFreeMenu  Boolean  @default(false)
+  safetyRating    Int?     // 1-5 how safe/knowledgeable they are
+  notes           String?
+  lastVisited     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  dishes          Dish[]
+}
+
+// Safe dishes at restaurants
+model Dish {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  isSafe       Boolean    @default(true)
+  notes        String?
+  rating       Int?       // 1-5 how good it was
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// Gluten Guide - Reference for ingredients and tips
+model GlutenInfo {
+  id          String   @id @default(cuid())
+  name        String   // ingredient or item name
+  category    String   // grain, additive, sauce, etc.
+  status      String   // safe, unsafe, check
+  description String?
+  tips        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -1,65 +1,74 @@
-import Image from "next/image";
+import Link from 'next/link';
+
+const features = [
+  {
+    href: '/diary',
+    icon: '📔',
+    title: 'Food Diary',
+    description: 'Track your meals and discover what works for you',
+    color: 'bg-green-100 hover:bg-green-200 border-green-300',
+  },
+  {
+    href: '/recipes',
+    icon: '👩‍🍳',
+    title: 'Recipe Box',
+    description: 'Save and organize your favorite gluten-free recipes',
+    color: 'bg-blue-100 hover:bg-blue-200 border-blue-300',
+  },
+  {
+    href: '/restaurants',
+    icon: '🍽️',
+    title: 'Restaurant Tracker',
+    description: 'Keep track of safe places to eat out',
+    color: 'bg-purple-100 hover:bg-purple-200 border-purple-300',
+  },
+  {
+    href: '/guide',
+    icon: '📚',
+    title: 'Gluten Guide',
+    description: 'Quick reference for ingredients and hidden gluten',
+    color: 'bg-orange-100 hover:bg-orange-200 border-orange-300',
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="max-w-4xl mx-auto">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-amber-800 mb-4">
+          Welcome to CeliApp
+        </h1>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Your personal companion for navigating life with celiac disease.
+          Track your journey, discover safe foods, and take control of your health.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {features.map((feature) => (
+          <Link
+            key={feature.href}
+            href={feature.href}
+            className={`block p-6 rounded-xl border-2 transition-all transform hover:scale-102 ${feature.color}`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <div className="text-4xl mb-3">{feature.icon}</div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+              {feature.title}
+            </h2>
+            <p className="text-gray-600">{feature.description}</p>
+          </Link>
+        ))}
+      </div>
+
+      <div className="mt-12 p-6 bg-white rounded-xl border border-amber-200 shadow-sm">
+        <h3 className="text-lg font-semibold text-amber-800 mb-2">
+          Getting Started
+        </h3>
+        <p className="text-gray-600">
+          Start by adding entries to your Food Diary to track meals and how they make you feel.
+          Over time, you&apos;ll build a personal database of safe foods and recipes that work for you.
+        </p>
+      </div>
     </div>
   );
 }
