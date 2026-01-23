@@ -59,9 +59,13 @@ export default function RecipesPage() {
   const fetchRecipes = async () => {
     const res = await fetch('/api/recipes');
     const data = await res.json();
-    setRecipes(data);
-    if (data.length > 0) {
-      setDailyRecipe(data[getDailyRecipeIndex(data.length)]);
+    if (Array.isArray(data)) {
+      setRecipes(data);
+      if (data.length > 0) {
+        setDailyRecipe(data[getDailyRecipeIndex(data.length)]);
+      }
+    } else {
+      setRecipes([]);
     }
     setLoading(false);
   };
