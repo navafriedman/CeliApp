@@ -46,12 +46,33 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    // Can only edit own recipes
+    // Can edit own recipes OR toggle favorite on shared recipes
     const existing = await prisma.recipe.findFirst({
-      where: { id, userId },
+      where: {
+        id,
+        OR: [
+          { userId },
+          { userId: null },
+        ],
+      },
     });
     if (!existing) {
-      return NextResponse.json({ error: 'Recipe not found or not yours' }, { status: 404 });
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
+    }
+
+    // If it's a shared recipe (userId: null), only allow toggling favorite
+    if (existing.userId === null && body.isFavorite !== undefined) {
+      // For shared recipes, we can only toggle favorite
+      const recipe = await prisma.recipe.update({
+        where: { id },
+        data: { isFavorite: body.isFavorite },
+      });
+      return NextResponse.json(recipe);
+    }
+
+    // For own recipes, allow full edit
+    if (existing.userId !== userId) {
+      return NextResponse.json({ error: 'Cannot edit shared recipes' }, { status: 403 });
     }
 
     const recipe = await prisma.recipe.update({
