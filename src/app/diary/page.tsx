@@ -38,7 +38,11 @@ export default function DiaryPage() {
   const fetchEntries = async () => {
     const res = await fetch('/api/diary');
     const data = await res.json();
-    setEntries(data);
+    if (Array.isArray(data)) {
+      setEntries(data);
+    } else {
+      setEntries([]);
+    }
     setLoading(false);
   };
 
