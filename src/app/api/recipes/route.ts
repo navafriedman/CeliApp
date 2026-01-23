@@ -1,15 +1,22 @@
 import { getPrisma } from '@/lib/db';
+import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
+    const { userId } = await auth();
     const prisma = await getPrisma();
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get('category');
     const favorites = searchParams.get('favorites') === 'true';
 
+    // Show user's recipes + shared recipes (userId is null)
     const recipes = await prisma.recipe.findMany({
       where: {
+        OR: [
+          { userId: userId || undefined },
+          { userId: null },
+        ],
         ...(category && { category }),
         ...(favorites && { isFavorite: true }),
       },
@@ -24,11 +31,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const prisma = await getPrisma();
     const body = await request.json();
 
     const recipe = await prisma.recipe.create({
       data: {
+        userId,
         title: body.title,
         description: body.description || null,
         ingredients: body.ingredients,

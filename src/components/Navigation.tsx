@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 
 const navItems = [
   { href: '/', label: 'Home', icon: '🏠', color: 'from-violet-400 to-purple-400' },
@@ -53,6 +54,20 @@ export default function Navigation() {
                 </Link>
               );
             })}
+
+            {/* Auth */}
+            <div className="ml-2 pl-2 border-l border-gray-200">
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 transition-all duration-200">
+                    Sign In
+                  </button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+            </div>
           </div>
         </div>
       </div>

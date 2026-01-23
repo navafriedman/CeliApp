@@ -14,6 +14,7 @@ datasource db {
 // Food Diary - Track meals and how you feel
 model FoodEntry {
   id          String   @id @default(cuid())
+  userId      String?  // Clerk user ID (null for legacy entries)
   date        DateTime @default(now())
   mealType    String   // breakfast, lunch, dinner, snack
   description String
@@ -24,11 +25,14 @@ model FoodEntry {
   rating      Int?     // 1-5 how good the meal was
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // Recipe Box - Save gluten-free recipes
 model Recipe {
   id           String   @id @default(cuid())
+  userId       String?  // Clerk user ID (null for seeded/shared recipes)
   title        String
   description  String?
   ingredients  String   // stored as JSON string
@@ -42,11 +46,14 @@ model Recipe {
   isFavorite   Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // Restaurant Tracker - Safe places to eat
 model Restaurant {
   id              String   @id @default(cuid())
+  userId          String?  // Clerk user ID (null for seeded/shared restaurants)
   name            String
   address         String?
   phone           String?
@@ -59,6 +66,8 @@ model Restaurant {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   dishes          Dish[]
+
+  @@index([userId])
 }
 
 // Safe dishes at restaurants

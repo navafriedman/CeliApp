@@ -1,4 +1,5 @@
 import { getPrisma } from '@/lib/db';
+import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -6,10 +7,19 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { userId } = await auth();
     const prisma = await getPrisma();
     const { id } = await params;
-    const recipe = await prisma.recipe.findUnique({
-      where: { id },
+
+    // Can view own recipes or shared recipes
+    const recipe = await prisma.recipe.findFirst({
+      where: {
+        id,
+        OR: [
+          { userId: userId || undefined },
+          { userId: null },
+        ],
+      },
     });
 
     if (!recipe) {
@@ -27,9 +37,22 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const prisma = await getPrisma();
     const { id } = await params;
     const body = await request.json();
+
+    // Can only edit own recipes
+    const existing = await prisma.recipe.findFirst({
+      where: { id, userId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: 'Recipe not found or not yours' }, { status: 404 });
+    }
 
     const recipe = await prisma.recipe.update({
       where: { id },
@@ -59,8 +82,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const prisma = await getPrisma();
     const { id } = await params;
+
+    // Can only delete own recipes
+    const existing = await prisma.recipe.findFirst({
+      where: { id, userId },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: 'Recipe not found or not yours' }, { status: 404 });
+    }
+
     await prisma.recipe.delete({
       where: { id },
     });
