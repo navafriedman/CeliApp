@@ -193,7 +193,8 @@ async function analyzeMenuPhotos(
   openai: OpenAI,
   photoUrls: string[],
   restaurantName: string,
-  categories: string
+  categories: string,
+  isMenuPhoto: boolean = true
 ): Promise<SuggestedItem[]> {
   if (photoUrls.length === 0) return [];
 
@@ -203,15 +204,9 @@ async function analyzeMenuPhotos(
       image_url: { url, detail: 'high' as const },
     }));
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `You are helping someone with celiac disease who is also vegetarian find safe menu items. These are menu photos from "${restaurantName}" (${categories}).
+    // Different prompts for menu photos vs food photos
+    const prompt = isMenuPhoto
+      ? `You are helping someone with celiac disease who is also vegetarian find safe menu items. These are menu photos from "${restaurantName}" (${categories}).
 
 Analyze these menu images and extract ONLY menu items that are BOTH:
 1. Gluten-free (naturally GF ingredients like rice, beans, vegetables, tofu, cheese, eggs - or explicitly marked GF)
@@ -230,8 +225,39 @@ Important:
 - Be conservative with GF labels - only include if clearly safe or naturally GF
 - If you can see prices, don't include them in the name
 - If you can't read the menu clearly or find no qualifying items, return []
-- Only respond with the JSON array, no other text.`,
-            },
+- Only respond with the JSON array, no other text.`
+      : `You are helping someone with celiac disease who is also vegetarian find dishes to order. These are food photos from "${restaurantName}" (${categories}).
+
+Look at the INDIVIDUAL DISHES (not the bread/base) in these photos and identify which dish components appear to be BOTH gluten-free AND vegetarian.
+
+Important context:
+- Focus on the stews, curries, salads, vegetables, beans, and lentils - NOT the bread they're served on
+- The person knows to ask for their food without bread/flatbread
+- Ethiopian/East African stews and wots are often naturally GF (made with berbere spice, no flour)
+- Indian curries, dal, and vegetable dishes are often naturally GF
+- Look for: lentils, beans, chickpeas, vegetables, tofu, rice, potatoes, greens
+
+Based on what's visible, describe the vegetarian & gluten-free dishes/components you can identify. Give each a descriptive name.
+
+Respond ONLY with a JSON array:
+[
+  { "name": "Dish name (e.g., 'Misir Wot (Spiced Lentils)' or 'Vegetable Curry')", "description": "Brief description of what you see", "isGlutenFree": true, "isVegetarian": true }
+]
+
+Important:
+- Focus on the DISHES/STEWS, not the bread base
+- Include items that appear to be naturally GF vegetable/legume based dishes
+- If the photos show food platters, identify individual dish components
+- You MUST include dishes if you can see lentils, beans, vegetables, or other naturally GF vegetarian items
+- Only respond with the JSON array, no other text.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
             ...imageContent,
           ],
         },
@@ -294,17 +320,31 @@ async function getGooglePlacesData(
       return { photoUrls: [], googleMapsUrl: place?.googleMapsUri || null };
     }
 
-    // Get photo URLs - Google requires fetching each photo separately
-    // Photos are returned as references, we need to construct the URL
+    // Get photo URLs - Google Places API v1 returns photo references
+    // We need to fetch each photo's actual URL using the getMedia endpoint
     const photoUrls: string[] = [];
 
     // Take up to 5 photos (prioritizing variety)
     const photosToFetch = place.photos.slice(0, 5);
 
     for (const photo of photosToFetch) {
-      // Google Places API v1 photo URL format
-      const photoUrl = `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=800&maxWidthPx=800&key=${googleApiKey}`;
-      photoUrls.push(photoUrl);
+      try {
+        // Google Places API v1 - fetch the photo media to get the actual photoUri
+        // The response returns a short-lived URL we can use with OpenAI
+        const mediaUrl = `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=800&maxWidthPx=800&skipHttpRedirect=true&key=${googleApiKey}`;
+        const mediaResponse = await fetch(mediaUrl, { signal: AbortSignal.timeout(5000) });
+
+        if (mediaResponse.ok) {
+          const mediaData = await mediaResponse.json();
+          if (mediaData.photoUri) {
+            photoUrls.push(mediaData.photoUri);
+          }
+        } else {
+          console.error(`Google photo fetch failed (${mediaResponse.status}):`, await mediaResponse.text().catch(() => 'no body'));
+        }
+      } catch (err) {
+        console.error('Google photo fetch error:', err);
+      }
     }
 
     return {
@@ -435,18 +475,17 @@ export async function GET(
 
       // Priority 1: Analyze Yelp menu photos with Vision (most reliable for menus)
       if (yelpMenuPhotos.length > 0) {
-        console.log(`Analyzing ${yelpMenuPhotos.length} Yelp menu photos for ${business.name}`);
-        suggestedItems = await analyzeMenuPhotos(openai, yelpMenuPhotos, business.name, categories);
+        suggestedItems = await analyzeMenuPhotos(openai, yelpMenuPhotos, business.name, categories, true);
         if (suggestedItems.length > 0) {
           dataSource = 'menu_photo';
           dataSourceUrl = `${business.url}/photos`;
         }
       }
 
-      // Priority 2: Try Google Places photos (often has food/menu photos)
+      // Priority 2: Try Google Places photos (food photos, not menu photos)
       if (suggestedItems.length === 0 && googleData.photoUrls.length > 0) {
-        console.log(`Analyzing ${googleData.photoUrls.length} Google photos for ${business.name}`);
-        suggestedItems = await analyzeMenuPhotos(openai, googleData.photoUrls, business.name, categories);
+        // These are food photos, not menu photos - use different prompt
+        suggestedItems = await analyzeMenuPhotos(openai, googleData.photoUrls, business.name, categories, false);
         if (suggestedItems.length > 0) {
           dataSource = 'google_photos';
           dataSourceUrl = googleData.googleMapsUrl;
