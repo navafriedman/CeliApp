@@ -26,6 +26,13 @@ interface YelpBusinessDetails {
   };
 }
 
+interface YelpPhoto {
+  id: string;
+  url: string;
+  caption: string;
+  label: string;
+}
+
 interface SuggestedItem {
   name: string;
   description: string;
@@ -36,10 +43,9 @@ interface SuggestedItem {
 // Try to fetch and extract menu text from a restaurant's website
 async function scrapeMenuFromWebsite(url: string): Promise<string | null> {
   try {
-    // Try common menu URL patterns
     const baseUrl = new URL(url).origin;
     const menuUrls = [
-      url, // Yelp-provided menu URL
+      url,
       `${baseUrl}/menu`,
       `${baseUrl}/food-menu`,
       `${baseUrl}/our-menu`,
@@ -51,15 +57,12 @@ async function scrapeMenuFromWebsite(url: string): Promise<string | null> {
           headers: {
             'User-Agent': 'Mozilla/5.0 (compatible; CeliApp/1.0; +https://celiapp.com)',
           },
-          signal: AbortSignal.timeout(5000), // 5 second timeout
+          signal: AbortSignal.timeout(5000),
         });
 
         if (!response.ok) continue;
 
         const html = await response.text();
-
-        // Extract text content, focusing on menu-like content
-        // Remove scripts, styles, and HTML tags
         let text = html
           .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -72,9 +75,8 @@ async function scrapeMenuFromWebsite(url: string): Promise<string | null> {
           .replace(/\s+/g, ' ')
           .trim();
 
-        // If we got substantial content, return it (truncate to avoid token limits)
         if (text.length > 500) {
-          return text.slice(0, 8000); // Limit to ~8k chars for AI processing
+          return text.slice(0, 8000);
         }
       } catch {
         // Continue to next URL
@@ -86,42 +88,217 @@ async function scrapeMenuFromWebsite(url: string): Promise<string | null> {
   }
 }
 
-// Fetch Yelp's "popular dishes" if available via web scraping
-async function getYelpPopularDishes(yelpUrl: string): Promise<string[]> {
+// Fetch menu photos from Yelp's photo API
+async function getYelpMenuPhotos(businessId: string, apiKey: string): Promise<string[]> {
   try {
-    const response = await fetch(yelpUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; CeliApp/1.0)',
-      },
-      signal: AbortSignal.timeout(5000),
-    });
+    // Yelp's photo endpoint - filter for menu photos
+    const response = await fetch(
+      `${YELP_API_URL}/${businessId}/photos?limit=30`,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          Accept: 'application/json',
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
 
     if (!response.ok) return [];
 
+    const data = await response.json();
+    const photos: YelpPhoto[] = data.photos || [];
+
+    // Filter for menu photos (label is "menu" or caption contains menu-related words)
+    const menuPhotos = photos.filter(
+      (p) =>
+        p.label === 'menu' ||
+        p.caption?.toLowerCase().includes('menu') ||
+        p.caption?.toLowerCase().includes('specials')
+    );
+
+    // Return up to 3 menu photo URLs
+    return menuPhotos.slice(0, 3).map((p) => p.url);
+  } catch {
+    return [];
+  }
+}
+
+// Scrape the Yelp page for menu photos and popular dishes
+async function scrapeYelpPage(yelpUrl: string): Promise<{ menuPhotoUrls: string[]; popularDishes: string[] }> {
+  try {
+    const response = await fetch(yelpUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!response.ok) return { menuPhotoUrls: [], popularDishes: [] };
+
     const html = await response.text();
+    const menuPhotoUrls: string[] = [];
+    const popularDishes: string[] = [];
 
-    // Look for popular dishes in the Yelp page
-    // Yelp often has these in specific data attributes or sections
-    const dishes: string[] = [];
+    // Look for menu photos - Yelp often labels these
+    // Match image URLs in menu-related sections
+    const menuSectionMatch = html.match(/menu[\s\S]{0,2000}?(?=<\/section|<\/article)/gi);
+    if (menuSectionMatch) {
+      for (const section of menuSectionMatch) {
+        const imgMatches = section.match(/https:\/\/s3-media[0-9]*\.fl\.yelpcdn\.com\/bphoto\/[^"'\s]+/g);
+        if (imgMatches) {
+          menuPhotoUrls.push(...imgMatches.slice(0, 3));
+        }
+      }
+    }
 
-    // Match patterns like "Popular dishes" section content
+    // Also look for any photo labeled as menu in the entire page
+    const allMenuImgs = html.match(/"label"\s*:\s*"menu"[\s\S]{0,200}?"url"\s*:\s*"([^"]+)"/gi);
+    if (allMenuImgs) {
+      for (const match of allMenuImgs) {
+        const urlMatch = match.match(/"url"\s*:\s*"([^"]+)"/);
+        if (urlMatch && urlMatch[1]) {
+          menuPhotoUrls.push(urlMatch[1]);
+        }
+      }
+    }
+
+    // Extract popular dishes
     const dishMatches = html.match(/(?:popular|recommended|must.try|signature)[\s\S]{0,500}?(?=<\/section|<\/div>)/gi);
     if (dishMatches) {
       for (const match of dishMatches) {
-        // Extract food item names (usually in spans or links)
         const itemMatches = match.match(/>([A-Z][^<]{3,40})</g);
         if (itemMatches) {
           for (const item of itemMatches) {
             const cleaned = item.replace(/^>|<$/g, '').trim();
             if (cleaned.length > 3 && cleaned.length < 50 && !cleaned.includes('http')) {
-              dishes.push(cleaned);
+              popularDishes.push(cleaned);
             }
           }
         }
       }
     }
 
-    return [...new Set(dishes)].slice(0, 20); // Dedupe and limit
+    return {
+      menuPhotoUrls: [...new Set(menuPhotoUrls)].slice(0, 4),
+      popularDishes: [...new Set(popularDishes)].slice(0, 20),
+    };
+  } catch {
+    return { menuPhotoUrls: [], popularDishes: [] };
+  }
+}
+
+// Analyze menu photos using GPT-4 Vision
+async function analyzeMenuPhotos(
+  openai: OpenAI,
+  photoUrls: string[],
+  restaurantName: string,
+  categories: string
+): Promise<SuggestedItem[]> {
+  if (photoUrls.length === 0) return [];
+
+  try {
+    const imageContent = photoUrls.map((url) => ({
+      type: 'image_url' as const,
+      image_url: { url, detail: 'high' as const },
+    }));
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `You are helping someone with celiac disease find safe menu items. These are menu photos from "${restaurantName}" (${categories}).
+
+Analyze these menu images and extract ALL menu items you can read. For each item, determine:
+1. Is it likely gluten-free? (naturally GF ingredients like rice, meat, vegetables, salads, or explicitly marked GF)
+2. Is it vegetarian?
+
+Be thorough - read every item you can see on the menu(s).
+
+Respond ONLY with a JSON array:
+[
+  { "name": "Exact Menu Item Name", "description": "Brief description or ingredients if visible", "isGlutenFree": true/false, "isVegetarian": true/false }
+]
+
+Important:
+- Include the exact name as written on the menu
+- Be conservative with GF labels - only true if clearly safe or naturally GF
+- If you can see prices, don't include them in the name
+- If you can't read the menu clearly, return []
+- Only respond with the JSON array, no other text.`,
+            },
+            ...imageContent,
+          ],
+        },
+      ],
+      max_tokens: 4000,
+    });
+
+    let content = response.choices[0]?.message?.content || '[]';
+
+    // Strip markdown code fences
+    content = content.trim();
+    if (content.startsWith('```json')) content = content.slice(7);
+    else if (content.startsWith('```')) content = content.slice(3);
+    if (content.endsWith('```')) content = content.slice(0, -3);
+    content = content.trim();
+
+    return JSON.parse(content);
+  } catch (error) {
+    console.error('Menu photo analysis error:', error);
+    return [];
+  }
+}
+
+// Analyze text-based menu data
+async function analyzeMenuText(
+  openai: OpenAI,
+  menuContext: string,
+  restaurantName: string,
+  categories: string
+): Promise<SuggestedItem[]> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content: `You are helping someone with celiac disease find safe menu items at "${restaurantName}" (${categories}).
+
+${menuContext}
+
+Based on this menu information, identify specific dishes that are:
+1. Gluten-free (naturally GF or explicitly marked as GF) - be conservative
+2. Vegetarian
+
+Respond ONLY with a JSON array:
+[
+  { "name": "Dish Name", "description": "Brief description", "isGlutenFree": true/false, "isVegetarian": true/false }
+]
+
+Important:
+- Only include real menu items from the data
+- Be conservative with GF labels
+- Include a variety of items
+- If no clear items found, return []
+- Only respond with the JSON array.`,
+        },
+      ],
+      max_tokens: 2000,
+    });
+
+    let content = response.choices[0]?.message?.content || '[]';
+
+    content = content.trim();
+    if (content.startsWith('```json')) content = content.slice(7);
+    else if (content.startsWith('```')) content = content.slice(3);
+    if (content.endsWith('```')) content = content.slice(0, -3);
+    content = content.trim();
+
+    return JSON.parse(content);
   } catch {
     return [];
   }
@@ -160,91 +337,64 @@ export async function GET(
     }
 
     const business: YelpBusinessDetails = await detailsResponse.json();
+    const categories = business.categories.map((c) => c.title).join(', ');
 
-    // Gather menu data from multiple sources in parallel
-    const [menuText, popularDishes] = await Promise.all([
-      // Try to scrape menu from restaurant's website
+    // Gather data from multiple sources in parallel
+    const [menuText, yelpData, yelpApiPhotos] = await Promise.all([
+      // Try restaurant's own website
       business.attributes?.menu_url
         ? scrapeMenuFromWebsite(business.attributes.menu_url)
         : Promise.resolve(null),
-      // Get popular dishes from Yelp page
-      getYelpPopularDishes(business.url),
+      // Scrape Yelp page for menu photos and popular dishes
+      scrapeYelpPage(business.url),
+      // Try Yelp's photo API
+      getYelpMenuPhotos(id, apiKey),
     ]);
+
+    // Combine menu photo sources
+    const allMenuPhotos = [...new Set([...yelpData.menuPhotoUrls, ...yelpApiPhotos])].slice(0, 4);
 
     let suggestedItems: SuggestedItem[] = [];
     let dataSource = 'none';
 
-    if (openaiKey && (menuText || popularDishes.length > 0)) {
-      try {
-        const openai = new OpenAI({ apiKey: openaiKey });
+    if (openaiKey) {
+      const openai = new OpenAI({ apiKey: openaiKey });
 
-        // Build context based on available data
-        let menuContext = '';
-        if (menuText) {
-          menuContext = `Menu content from restaurant website:\n${menuText}\n\n`;
+      // Priority 1: Analyze menu photos with Vision (most reliable)
+      if (allMenuPhotos.length > 0) {
+        console.log(`Analyzing ${allMenuPhotos.length} menu photos for ${business.name}`);
+        suggestedItems = await analyzeMenuPhotos(openai, allMenuPhotos, business.name, categories);
+        if (suggestedItems.length > 0) {
+          dataSource = 'menu_photo';
+        }
+      }
+
+      // Priority 2: Analyze website menu text
+      if (suggestedItems.length === 0 && menuText) {
+        console.log(`Analyzing website menu text for ${business.name}`);
+        suggestedItems = await analyzeMenuText(
+          openai,
+          `Menu content from restaurant website:\n${menuText}`,
+          business.name,
+          categories
+        );
+        if (suggestedItems.length > 0) {
           dataSource = 'menu';
         }
-        if (popularDishes.length > 0) {
-          menuContext += `Popular dishes from Yelp: ${popularDishes.join(', ')}\n\n`;
-          if (!menuText) dataSource = 'yelp_dishes';
+      }
+
+      // Priority 3: Use popular dishes from Yelp
+      if (suggestedItems.length === 0 && yelpData.popularDishes.length > 0) {
+        console.log(`Analyzing Yelp popular dishes for ${business.name}`);
+        suggestedItems = await analyzeMenuText(
+          openai,
+          `Popular dishes from Yelp: ${yelpData.popularDishes.join(', ')}`,
+          business.name,
+          categories
+        );
+        if (suggestedItems.length > 0) {
+          dataSource = 'yelp_dishes';
         }
-
-        const aiResponse = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'user',
-              content: `You are helping someone with celiac disease find safe menu items at "${business.name}" (a ${business.categories.map((c) => c.title).join(', ')} restaurant).
-
-${menuContext}
-
-Based on this menu information, identify specific dishes that are:
-1. Gluten-free (naturally GF or explicitly marked as GF) - be conservative, only mark as GF if confident
-2. Vegetarian
-
-For each item, provide:
-- The exact dish name as it appears on the menu
-- A brief description
-- Whether it's gluten-free (true only if naturally GF like rice/salad dishes, or explicitly marked)
-- Whether it's vegetarian
-
-Respond in JSON format:
-[
-  { "name": "Dish Name", "description": "Brief description", "isGlutenFree": true/false, "isVegetarian": true/false }
-]
-
-Important:
-- Only include real menu items you found in the data
-- Be conservative with gluten-free labels - when in doubt, mark as false
-- Include a good variety of items (appetizers, mains, sides)
-- If no clear menu items are found, return an empty array []
-- Only respond with the JSON array, no other text.`,
-            },
-          ],
-          max_tokens: 2000,
-        });
-
-        let content = aiResponse.choices[0]?.message?.content || '[]';
-
-        // Strip markdown code fences if present
-        content = content.trim();
-        if (content.startsWith('```json')) {
-          content = content.slice(7);
-        } else if (content.startsWith('```')) {
-          content = content.slice(3);
-        }
-        if (content.endsWith('```')) {
-          content = content.slice(0, -3);
-        }
-        content = content.trim();
-
-        try {
-          suggestedItems = JSON.parse(content);
-        } catch {
-          suggestedItems = [];
-        }
-      } catch (aiError) {
-        console.error('AI analysis error:', aiError);
       }
     }
 
@@ -256,13 +406,14 @@ Important:
       rating: business.rating,
       reviewCount: business.review_count,
       price: business.price,
-      categories: business.categories.map((c) => c.title).join(', '),
+      categories,
       address: business.location.display_address.join(', '),
       phone: business.display_phone,
       photos: business.photos,
       isOpenNow: business.hours?.[0]?.is_open_now,
       suggestedItems,
-      dataSource, // Let the frontend know where data came from
+      dataSource,
+      menuPhotosFound: allMenuPhotos.length,
     });
   } catch (error) {
     console.error('Yelp API error:', error);

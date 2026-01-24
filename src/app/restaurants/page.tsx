@@ -60,7 +60,8 @@ type YelpRestaurantDetails = {
   photos: string[];
   isOpenNow?: boolean;
   suggestedItems: SuggestedItem[];
-  dataSource?: 'menu' | 'yelp_dishes' | 'none';
+  dataSource?: 'menu_photo' | 'menu' | 'yelp_dishes' | 'none';
+  menuPhotosFound?: number;
 };
 
 const cuisineTypes = [
@@ -98,7 +99,7 @@ export default function RestaurantsPage() {
   const [searchLocation, setSearchLocation] = useState('11216');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYelpRestaurant, setSelectedYelpRestaurant] = useState<YelpRestaurantDetails | null>(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadingDetailsId, setLoadingDetailsId] = useState<string | null>(null);
 
   useEffect(() => {
     seedAndFetch();
@@ -157,7 +158,7 @@ export default function RestaurantsPage() {
   };
 
   const fetchYelpDetails = async (yelpId: string) => {
-    setLoadingDetails(true);
+    setLoadingDetailsId(yelpId);
     try {
       const res = await fetch(`/api/restaurants/yelp/${yelpId}`);
       const data = await res.json();
@@ -169,7 +170,7 @@ export default function RestaurantsPage() {
     } catch {
       alert('Failed to load restaurant details');
     } finally {
-      setLoadingDetails(false);
+      setLoadingDetailsId(null);
     }
   };
 
@@ -797,10 +798,10 @@ export default function RestaurantsPage() {
                       <div className="flex flex-col gap-2">
                         <button
                           onClick={() => fetchYelpDetails(restaurant.yelpId)}
-                          disabled={loadingDetails}
+                          disabled={loadingDetailsId === restaurant.yelpId}
                           className="w-full text-center text-sm text-violet-600 border border-violet-300 py-1.5 rounded-lg hover:bg-violet-50 disabled:opacity-50"
                         >
-                          {loadingDetails ? 'Loading...' : '🍽️ View GF/Veggie Items'}
+                          {loadingDetailsId === restaurant.yelpId ? 'Analyzing menu...' : '🍽️ View GF/Veggie Items'}
                         </button>
                         <div className="flex gap-2">
                           <a
@@ -904,9 +905,14 @@ export default function RestaurantsPage() {
                   <div className="border-t pt-4">
                     <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                       🥗 Likely GF & Vegetarian Items
+                      {selectedYelpRestaurant.dataSource === 'menu_photo' && (
+                        <span className="text-xs font-normal bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
+                          from menu photos
+                        </span>
+                      )}
                       {selectedYelpRestaurant.dataSource === 'menu' && (
                         <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                          from menu
+                          from website menu
                         </span>
                       )}
                       {selectedYelpRestaurant.dataSource === 'yelp_dishes' && (
@@ -961,7 +967,11 @@ export default function RestaurantsPage() {
                     )}
 
                     <p className="text-xs text-gray-400 mt-4 italic">
-                      * Items are analyzed by AI from {selectedYelpRestaurant.dataSource === 'menu' ? 'the restaurant\'s menu' : 'available data'}. Always confirm with the restaurant about ingredients and cross-contamination.
+                      * Items are analyzed by AI from {
+                        selectedYelpRestaurant.dataSource === 'menu_photo' ? 'menu photos' :
+                        selectedYelpRestaurant.dataSource === 'menu' ? 'the restaurant\'s website' :
+                        'available data'
+                      }. Always confirm with the restaurant about ingredients and cross-contamination.
                     </p>
                   </div>
 
