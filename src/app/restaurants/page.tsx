@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 type Dish = {
   id: string;
@@ -72,7 +73,13 @@ const cuisineTypes = [
   'Vegan', 'Vegetarian', 'Health Food', 'Bakery/Cafe', 'Other'
 ];
 
-export default function RestaurantsPage() {
+function RestaurantsPageContent() {
+  const searchParams = useSearchParams();
+
+  // Read initial values from URL params
+  const initialTerm = searchParams.get('term') || '';
+  const initialLocation = searchParams.get('location') || '11216';
+
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -98,17 +105,67 @@ export default function RestaurantsPage() {
   const [yelpError, setYelpError] = useState<string | null>(null);
   const [yelpOffset, setYelpOffset] = useState(0);
   const [hasMoreYelp, setHasMoreYelp] = useState(false);
-  const [searchLocation, setSearchLocation] = useState('11216');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchLocation, setSearchLocation] = useState(initialLocation);
+  const [searchTerm, setSearchTerm] = useState(initialTerm);
   const [selectedYelpRestaurant, setSelectedYelpRestaurant] = useState<YelpRestaurantDetails | null>(null);
   const [loadingDetailsId, setLoadingDetailsId] = useState<string | null>(null);
+  const [initialSearchDone, setInitialSearchDone] = useState(false);
 
+  // Effect to handle URL params on initial load
   useEffect(() => {
     seedAndFetch();
-    // Auto-fetch Yelp restaurants since Discover is the default tab
-    fetchYelpRestaurants();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Separate effect to trigger search after component mounts with URL params
+  useEffect(() => {
+    if (!initialSearchDone) {
+      // Update state from URL params if they changed
+      const urlTerm = searchParams.get('term') || '';
+      const urlLocation = searchParams.get('location') || '11216';
+      setSearchTerm(urlTerm);
+      setSearchLocation(urlLocation);
+      setInitialSearchDone(true);
+      // Trigger search with URL params
+      fetchYelpRestaurantsWithParams(urlLocation, urlTerm);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, initialSearchDone]);
+
+  const fetchYelpRestaurantsWithParams = async (loc: string, term: string, offset = 0, append = false) => {
+    setYelpLoading(true);
+    setYelpError(null);
+
+    try {
+      const params = new URLSearchParams({
+        location: loc,
+        offset: offset.toString(),
+      });
+      if (term) {
+        params.set('term', term);
+      }
+
+      const res = await fetch(`/api/restaurants/yelp?${params}`);
+      const data = await res.json();
+
+      if (data.error) {
+        setYelpError(data.error);
+        return;
+      }
+
+      if (append) {
+        setYelpRestaurants((prev) => [...prev, ...data.restaurants]);
+      } else {
+        setYelpRestaurants(data.restaurants || []);
+      }
+      setHasMoreYelp(data.hasMore || false);
+      setYelpOffset(offset);
+    } catch {
+      setYelpError('Failed to fetch restaurants');
+    } finally {
+      setYelpLoading(false);
+    }
+  };
 
   const seedAndFetch = async () => {
     // Seed restaurants if empty
@@ -128,38 +185,8 @@ export default function RestaurantsPage() {
   };
 
   const fetchYelpRestaurants = async (offset = 0, append = false) => {
-    setYelpLoading(true);
-    setYelpError(null);
-
-    try {
-      const params = new URLSearchParams({
-        location: searchLocation,
-        offset: offset.toString(),
-      });
-      if (searchTerm) {
-        params.set('term', searchTerm);
-      }
-
-      const res = await fetch(`/api/restaurants/yelp?${params}`);
-      const data = await res.json();
-
-      if (data.error) {
-        setYelpError(data.error);
-        return;
-      }
-
-      if (append) {
-        setYelpRestaurants(prev => [...prev, ...data.restaurants]);
-      } else {
-        setYelpRestaurants(data.restaurants);
-      }
-      setHasMoreYelp(data.hasMore);
-      setYelpOffset(offset + 20);
-    } catch {
-      setYelpError('Failed to fetch restaurants from Yelp');
-    } finally {
-      setYelpLoading(false);
-    }
+    // Use current state values
+    await fetchYelpRestaurantsWithParams(searchLocation, searchTerm, offset, append);
   };
 
   const fetchYelpDetails = async (yelpId: string) => {
@@ -1048,5 +1075,20 @@ export default function RestaurantsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RestaurantsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading restaurants...</p>
+        </div>
+      </div>
+    }>
+      <RestaurantsPageContent />
+    </Suspense>
   );
 }

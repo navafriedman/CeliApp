@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const features = [
   {
@@ -34,6 +38,18 @@ const features = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [location, setLocation] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('term', searchTerm);
+    if (location) params.set('location', location);
+    router.push(`/restaurants?${params.toString()}`);
+  };
+
   return (
     <div className="max-w-5xl mx-auto">
       {/* Hero Section */}
@@ -69,43 +85,67 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Featured: Restaurant Finder */}
+      {/* Featured: Restaurant Search */}
       <div className="mb-10">
-        <Link
-          href="/restaurants"
-          className="group block relative overflow-hidden bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]"
-        >
+        <div className="relative overflow-hidden bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 rounded-3xl p-8 text-white shadow-xl">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
 
-          <div className="relative flex flex-col md:flex-row items-center gap-6">
-            <div className="flex-shrink-0 text-center md:text-left">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mb-4 md:mb-0">
-                <span className="text-5xl">🍽️</span>
+          <div className="relative">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-4">
+                <span className="text-4xl">🍽️</span>
               </div>
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-3">
+              <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-3 ml-3">
                 AI-Powered Menu Analysis
               </div>
               <h2 className="text-2xl md:text-3xl font-bold mb-2">
                 Find GF & Veggie Menu Items
               </h2>
-              <p className="text-white/90 leading-relaxed max-w-xl">
+              <p className="text-white/90 leading-relaxed max-w-xl mx-auto">
                 Search any restaurant and instantly see which dishes are likely gluten-free and vegetarian.
-                Our AI analyzes menus and food photos to find safe options for you.
               </p>
             </div>
-            <div className="flex-shrink-0">
-              <div className="bg-white text-violet-600 px-6 py-3 rounded-full font-bold group-hover:bg-violet-50 transition-colors shadow-lg flex items-center gap-2">
-                <span>Try it now</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
+
+            {/* Search Form */}
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Restaurant name or cuisine..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
+                  />
+                </div>
+                <div className="flex-1 sm:flex-initial sm:w-48 relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📍</span>
+                  <input
+                    type="text"
+                    placeholder="ZIP or city..."
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="bg-white text-violet-600 px-8 py-4 rounded-xl font-bold hover:bg-violet-50 transition-colors shadow-lg flex items-center justify-center gap-2"
+                >
+                  <span>Search</span>
+                  <span>→</span>
+                </button>
               </div>
-            </div>
+              <p className="text-center text-white/70 text-sm mt-4">
+                Try &quot;Ethiopian&quot; in &quot;Brooklyn&quot; or just enter a ZIP code to explore nearby
+              </p>
+            </form>
           </div>
-        </Link>
+        </div>
       </div>
 
       {/* Feature Cards */}
