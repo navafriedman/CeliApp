@@ -616,9 +616,12 @@ export async function GET(
         console.log(`Menu text analysis found ${suggestedItems.length} items`);
         if (suggestedItems.length > 0) {
           dataSource = menuTextSource || 'menu';
+          // Build proper Yelp menu URL: /menu/slug instead of /biz/slug/menu
+          const bizSlug = business.url.match(/\/biz\/([^?]+)/)?.[1];
+          const yelpMenuUrl = bizSlug ? `https://www.yelp.com/menu/${bizSlug}` : business.url;
           dataSourceUrl = websiteMenuText
             ? restaurantWebsite || null
-            : (yelpMenuText ? `${business.url}/menu` : googleData.websiteUrl);
+            : (yelpMenuText ? yelpMenuUrl : googleData.websiteUrl);
         }
       }
 

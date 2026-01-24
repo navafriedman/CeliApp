@@ -60,7 +60,7 @@ type YelpRestaurantDetails = {
   photos: string[];
   isOpenNow?: boolean;
   suggestedItems: SuggestedItem[];
-  dataSource?: 'menu_photo' | 'google_photos' | 'menu' | 'yelp_dishes' | 'none';
+  dataSource?: 'menu_photo' | 'google_photos' | 'menu' | 'yelp_dishes' | 'yelp_menu' | 'yelp_website' | 'google_website' | 'none';
   dataSourceUrl?: string | null;
   menuPhotosFound?: number;
   googlePhotosFound?: number;
@@ -930,7 +930,7 @@ export default function RestaurantsPage() {
                           from food photos ↗
                         </a>
                       )}
-                      {selectedYelpRestaurant.dataSource === 'menu' && (
+                      {(selectedYelpRestaurant.dataSource === 'menu' || selectedYelpRestaurant.dataSource === 'yelp_website' || selectedYelpRestaurant.dataSource === 'google_website') && (
                         <a
                           href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
                           target="_blank"
@@ -938,6 +938,16 @@ export default function RestaurantsPage() {
                           className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full hover:bg-green-200 transition-colors cursor-pointer"
                         >
                           from website menu ↗
+                        </a>
+                      )}
+                      {selectedYelpRestaurant.dataSource === 'yelp_menu' && (
+                        <a
+                          href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-normal bg-red-100 text-red-700 px-2 py-0.5 rounded-full hover:bg-red-200 transition-colors cursor-pointer"
+                        >
+                          from Yelp menu ↗
                         </a>
                       )}
                       {selectedYelpRestaurant.dataSource === 'yelp_dishes' && (
@@ -1007,7 +1017,8 @@ export default function RestaurantsPage() {
                         ? 'Dish types identified from food photos - not exact menu items. Ask staff for actual menu names and GF options.'
                         : `Items analyzed by AI from ${
                             selectedYelpRestaurant.dataSource === 'menu_photo' ? 'menu photos' :
-                            selectedYelpRestaurant.dataSource === 'menu' ? 'the restaurant\'s website' :
+                            selectedYelpRestaurant.dataSource === 'yelp_menu' ? 'Yelp\'s menu page' :
+                            selectedYelpRestaurant.dataSource === 'menu' || selectedYelpRestaurant.dataSource === 'yelp_website' || selectedYelpRestaurant.dataSource === 'google_website' ? 'the restaurant\'s website' :
                             'available data'
                           }. Always confirm with the restaurant about ingredients and cross-contamination.`
                       }
