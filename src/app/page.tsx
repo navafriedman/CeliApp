@@ -77,18 +77,6 @@ export default function Home() {
             Your playful companion for living your{' '}
             <span className="font-semibold text-violet-600">best gluten-free life</span>
           </p>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/diary" className="badge-teal px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-80 transition-opacity cursor-pointer">
-              Track Meals
-            </Link>
-            <Link href="/recipes" className="badge-pink px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-80 transition-opacity cursor-pointer">
-              Find Recipes
-            </Link>
-            <Link href="/restaurants" className="badge-purple px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-80 transition-opacity cursor-pointer">
-              Discover Restaurants
-            </Link>
-          </div>
         </div>
       </div>
 
