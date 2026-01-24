@@ -908,8 +908,8 @@ export default function RestaurantsPage() {
 
                   {/* Suggested GF/Vegetarian Items */}
                   <div className="border-t pt-4">
-                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                      🥗 Likely GF & Vegetarian Items
+                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2 flex-wrap">
+                      🥗 {selectedYelpRestaurant.dataSource === 'google_photos' ? 'Dish Types to Ask About' : 'Likely GF & Vegetarian Items'}
                       {selectedYelpRestaurant.dataSource === 'menu_photo' && (
                         <a
                           href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
@@ -917,7 +917,7 @@ export default function RestaurantsPage() {
                           rel="noopener noreferrer"
                           className="text-xs font-normal bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full hover:bg-violet-200 transition-colors cursor-pointer"
                         >
-                          from Yelp photos ↗
+                          from menu photos ↗
                         </a>
                       )}
                       {selectedYelpRestaurant.dataSource === 'google_photos' && (
@@ -927,7 +927,7 @@ export default function RestaurantsPage() {
                           rel="noopener noreferrer"
                           className="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
                         >
-                          from Google Maps ↗
+                          from food photos ↗
                         </a>
                       )}
                       {selectedYelpRestaurant.dataSource === 'menu' && (
@@ -951,6 +951,12 @@ export default function RestaurantsPage() {
                         </a>
                       )}
                     </h3>
+
+                    {selectedYelpRestaurant.dataSource === 'google_photos' && selectedYelpRestaurant.suggestedItems.length > 0 && (
+                      <p className="text-sm text-gray-500 mb-3">
+                        Based on food photos, this restaurant appears to serve these types of dishes. Ask the staff about specific menu items!
+                      </p>
+                    )}
 
                     {selectedYelpRestaurant.suggestedItems.length === 0 ? (
                       <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
@@ -997,12 +1003,14 @@ export default function RestaurantsPage() {
                     )}
 
                     <p className="text-xs text-gray-400 mt-4 italic">
-                      * Items are analyzed by AI from {
-                        selectedYelpRestaurant.dataSource === 'menu_photo' ? 'Yelp photos' :
-                        selectedYelpRestaurant.dataSource === 'google_photos' ? 'Google Maps photos' :
-                        selectedYelpRestaurant.dataSource === 'menu' ? 'the restaurant\'s website' :
-                        'available data'
-                      }. Always confirm with the restaurant about ingredients and cross-contamination.
+                      * {selectedYelpRestaurant.dataSource === 'google_photos'
+                        ? 'Dish types identified from food photos - not exact menu items. Ask staff for actual menu names and GF options.'
+                        : `Items analyzed by AI from ${
+                            selectedYelpRestaurant.dataSource === 'menu_photo' ? 'menu photos' :
+                            selectedYelpRestaurant.dataSource === 'menu' ? 'the restaurant\'s website' :
+                            'available data'
+                          }. Always confirm with the restaurant about ingredients and cross-contamination.`
+                      }
                     </p>
                   </div>
 

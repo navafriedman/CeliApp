@@ -226,30 +226,27 @@ Important:
 - If you can see prices, don't include them in the name
 - If you can't read the menu clearly or find no qualifying items, return []
 - Only respond with the JSON array, no other text.`
-      : `You are helping someone with celiac disease who is also vegetarian find dishes to order. These are food photos from "${restaurantName}" (${categories}).
+      : `You are helping someone with celiac disease who is also vegetarian. These are food photos from "${restaurantName}" (${categories}).
 
-Look at the INDIVIDUAL DISHES (not the bread/base) in these photos and identify which dish components appear to be BOTH gluten-free AND vegetarian.
+Look at the dishes in these photos. For each dish that appears to be BOTH gluten-free AND vegetarian, describe what you see.
 
-Important context:
-- Focus on the stews, curries, salads, vegetables, beans, and lentils - NOT the bread they're served on
-- The person knows to ask for their food without bread/flatbread
-- Ethiopian/East African stews and wots are often naturally GF (made with berbere spice, no flour)
-- Indian curries, dal, and vegetable dishes are often naturally GF
-- Look for: lentils, beans, chickpeas, vegetables, tofu, rice, potatoes, greens
+For the "name" field, describe what type of dish it appears to be (e.g., "Red Lentil Stew", "Sautéed Greens", "Chickpea Curry"). Don't make up specific menu names - just describe the dish type.
 
-Based on what's visible, describe the vegetarian & gluten-free dishes/components you can identify. Give each a descriptive name.
+Context for ${categories} cuisine:
+- Ethiopian: Look for stews/wots (lentils, split peas, vegetables). Injera bread is NOT GF.
+- Indian: Look for dal, vegetable curries, rice dishes. Naan/roti are NOT GF.
+- General: Look for rice, beans, lentils, vegetables, tofu, salads.
 
 Respond ONLY with a JSON array:
 [
-  { "name": "Dish name (e.g., 'Misir Wot (Spiced Lentils)' or 'Vegetable Curry')", "description": "Brief description of what you see", "isGlutenFree": true, "isVegetarian": true }
+  { "name": "Type of dish (e.g., 'Red Lentil Stew')", "description": "What you see - ingredients visible", "isGlutenFree": true, "isVegetarian": true }
 ]
 
 Important:
-- Focus on the DISHES/STEWS, not the bread base
-- Include items that appear to be naturally GF vegetable/legume based dishes
-- If the photos show food platters, identify individual dish components
-- You MUST include dishes if you can see lentils, beans, vegetables, or other naturally GF vegetarian items
-- Only respond with the JSON array, no other text.`;
+- Only include dishes that appear naturally GF (no bread, pasta, breading)
+- Only include vegetarian dishes (no meat/fish visible)
+- Use generic dish type names, not made-up menu names
+- If unsure or can't identify GF+veggie dishes, return []`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
