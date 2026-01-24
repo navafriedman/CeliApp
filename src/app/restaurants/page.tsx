@@ -39,6 +39,29 @@ type YelpRestaurant = {
   distance?: number;
 };
 
+type SuggestedItem = {
+  name: string;
+  description: string;
+  isGlutenFree: boolean;
+  isVegetarian: boolean;
+};
+
+type YelpRestaurantDetails = {
+  id: string;
+  name: string;
+  imageUrl: string;
+  url: string;
+  rating: number;
+  reviewCount: number;
+  price?: string;
+  categories: string;
+  address: string;
+  phone: string;
+  photos: string[];
+  isOpenNow?: boolean;
+  suggestedItems: SuggestedItem[];
+};
+
 const cuisineTypes = [
   'American', 'Italian', 'Mexican', 'Chinese', 'Japanese', 'Thai', 'Indian',
   'Mediterranean', 'French', 'Korean', 'Vietnamese', 'Greek', 'Ethiopian',
@@ -72,6 +95,9 @@ export default function RestaurantsPage() {
   const [yelpOffset, setYelpOffset] = useState(0);
   const [hasMoreYelp, setHasMoreYelp] = useState(false);
   const [searchLocation, setSearchLocation] = useState('11216');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedYelpRestaurant, setSelectedYelpRestaurant] = useState<YelpRestaurantDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     seedAndFetch();
@@ -99,7 +125,15 @@ export default function RestaurantsPage() {
     setYelpError(null);
 
     try {
-      const res = await fetch(`/api/restaurants/yelp?location=${searchLocation}&offset=${offset}`);
+      const params = new URLSearchParams({
+        location: searchLocation,
+        offset: offset.toString(),
+      });
+      if (searchTerm) {
+        params.set('term', searchTerm);
+      }
+
+      const res = await fetch(`/api/restaurants/yelp?${params}`);
       const data = await res.json();
 
       if (data.error) {
@@ -118,6 +152,23 @@ export default function RestaurantsPage() {
       setYelpError('Failed to fetch restaurants from Yelp');
     } finally {
       setYelpLoading(false);
+    }
+  };
+
+  const fetchYelpDetails = async (yelpId: string) => {
+    setLoadingDetails(true);
+    try {
+      const res = await fetch(`/api/restaurants/yelp/${yelpId}`);
+      const data = await res.json();
+      if (data.error) {
+        alert('Failed to load restaurant details');
+      } else {
+        setSelectedYelpRestaurant(data);
+      }
+    } catch {
+      alert('Failed to load restaurant details');
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -640,10 +691,22 @@ export default function RestaurantsPage() {
         <div>
           {/* Search Controls */}
           <div className="bg-white p-4 rounded-xl border border-amber-200 mb-6">
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
+            <div className="grid md:grid-cols-3 gap-4 mb-4">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Search Location
+                  Restaurant Name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="e.g., Sweetgreen, Chipotle"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location
                 </label>
                 <input
                   type="text"
@@ -653,19 +716,21 @@ export default function RestaurantsPage() {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
-              <button
-                onClick={() => {
-                  setYelpOffset(0);
-                  fetchYelpRestaurants(0, false);
-                }}
-                disabled={yelpLoading}
-                className="bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
-              >
-                {yelpLoading ? 'Searching...' : 'Search'}
-              </button>
+              <div className="flex items-end">
+                <button
+                  onClick={() => {
+                    setYelpOffset(0);
+                    fetchYelpRestaurants(0, false);
+                  }}
+                  disabled={yelpLoading}
+                  className="w-full bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
+                >
+                  {yelpLoading ? 'Searching...' : 'Search'}
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Searching for vegetarian, vegan, and gluten-free friendly restaurants via Yelp
+            <p className="text-xs text-gray-500">
+              {searchTerm ? `Searching for "${searchTerm}" near ${searchLocation}` : 'Searching for vegetarian, vegan, and gluten-free friendly restaurants via Yelp'}
             </p>
           </div>
 
@@ -728,30 +793,39 @@ export default function RestaurantsPage() {
                         <span className="text-gray-300">|</span>
                         <span>{restaurant.reviewCount} reviews</span>
                       </div>
-                      <div className="flex gap-2">
-                        <a
-                          href={restaurant.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 text-center text-sm text-amber-600 border border-amber-300 py-1.5 rounded-lg hover:bg-amber-50"
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => fetchYelpDetails(restaurant.yelpId)}
+                          disabled={loadingDetails}
+                          className="w-full text-center text-sm text-violet-600 border border-violet-300 py-1.5 rounded-lg hover:bg-violet-50 disabled:opacity-50"
                         >
-                          View on Yelp
-                        </a>
-                        {isAlreadySaved(restaurant.name) ? (
-                          <button
-                            disabled
-                            className="flex-1 text-sm text-gray-400 bg-gray-100 py-1.5 rounded-lg cursor-not-allowed"
+                          {loadingDetails ? 'Loading...' : '🍽️ View GF/Veggie Items'}
+                        </button>
+                        <div className="flex gap-2">
+                          <a
+                            href={restaurant.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-center text-sm text-amber-600 border border-amber-300 py-1.5 rounded-lg hover:bg-amber-50"
                           >
-                            ✓ Saved
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => addFromYelp(restaurant)}
-                            className="flex-1 text-sm text-white bg-amber-600 py-1.5 rounded-lg hover:bg-amber-700"
-                          >
-                            + Add to My List
-                          </button>
-                        )}
+                            Yelp
+                          </a>
+                          {isAlreadySaved(restaurant.name) ? (
+                            <button
+                              disabled
+                              className="flex-1 text-sm text-gray-400 bg-gray-100 py-1.5 rounded-lg cursor-not-allowed"
+                            >
+                              ✓ Saved
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => addFromYelp(restaurant)}
+                              className="flex-1 text-sm text-white bg-amber-600 py-1.5 rounded-lg hover:bg-amber-700"
+                            >
+                              + Add
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -778,6 +852,117 @@ export default function RestaurantsPage() {
               <div className="text-4xl mb-4">🌱</div>
               <p className="text-gray-600 mb-2">Discover GF-friendly restaurants near you</p>
               <p className="text-sm text-gray-500">Enter a location and click Search to find new spots!</p>
+            </div>
+          )}
+
+          {/* Yelp Restaurant Details Modal */}
+          {selectedYelpRestaurant && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="relative">
+                  {selectedYelpRestaurant.imageUrl && (
+                    <div
+                      className="h-48 bg-cover bg-center rounded-t-xl"
+                      style={{ backgroundImage: `url(${selectedYelpRestaurant.imageUrl})` }}
+                    />
+                  )}
+                  <button
+                    onClick={() => setSelectedYelpRestaurant(null)}
+                    className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-600 rounded-full p-2 shadow-md"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800">{selectedYelpRestaurant.name}</h2>
+                      <p className="text-sm text-gray-500">{selectedYelpRestaurant.categories}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-1 text-yellow-500">
+                        <span>★</span>
+                        <span className="text-gray-700 font-medium">{selectedYelpRestaurant.rating}/5</span>
+                      </div>
+                      <p className="text-xs text-gray-500">{selectedYelpRestaurant.reviewCount} reviews</p>
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-gray-600 mb-4 space-y-1">
+                    <p>📍 {selectedYelpRestaurant.address}</p>
+                    {selectedYelpRestaurant.phone && <p>📞 {selectedYelpRestaurant.phone}</p>}
+                    {selectedYelpRestaurant.isOpenNow !== undefined && (
+                      <p className={selectedYelpRestaurant.isOpenNow ? 'text-green-600' : 'text-red-600'}>
+                        {selectedYelpRestaurant.isOpenNow ? '✓ Open Now' : '✗ Closed'}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Suggested GF/Vegetarian Items */}
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      🥗 Likely GF & Vegetarian Items
+                      <span className="text-xs font-normal text-gray-500">(based on reviews)</span>
+                    </h3>
+
+                    {selectedYelpRestaurant.suggestedItems.length === 0 ? (
+                      <p className="text-gray-500 text-sm italic">
+                        No specific menu items found in reviews. Check the restaurant&apos;s menu directly for GF/vegetarian options.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedYelpRestaurant.suggestedItems.map((item, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-50 p-3 rounded-lg border border-gray-100"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-800">{item.name}</span>
+                              <div className="flex gap-1">
+                                {item.isGlutenFree && (
+                                  <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
+                                    GF
+                                  </span>
+                                )}
+                                {item.isVegetarian && (
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                    Veggie
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {item.description && (
+                              <p className="text-sm text-gray-600">{item.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-400 mt-4 italic">
+                      * Items are suggested based on AI analysis of Yelp reviews. Always confirm with the restaurant about ingredients and preparation methods.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <a
+                      href={selectedYelpRestaurant.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 text-center py-2 border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50"
+                    >
+                      View on Yelp
+                    </a>
+                    <button
+                      onClick={() => setSelectedYelpRestaurant(null)}
+                      className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

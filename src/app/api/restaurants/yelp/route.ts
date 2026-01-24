@@ -44,18 +44,25 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const location = searchParams.get('location') || '11216'; // Default to user's zip
   const offset = searchParams.get('offset') || '0';
+  const searchTerm = searchParams.get('term') || ''; // Restaurant name search
 
   try {
-    // Search for vegetarian/vegan restaurants that might be GF-friendly
-    // We search for terms that often correlate with GF options
+    // Build search params
     const params = new URLSearchParams({
       location,
-      term: 'gluten free vegetarian vegan',
-      categories: 'vegetarian,vegan,glutenfree,healthfood,juicebars,raw_food',
       limit: '20',
       offset,
       sort_by: 'rating',
     });
+
+    // If searching for a specific restaurant, use that term
+    // Otherwise default to GF-friendly categories
+    if (searchTerm) {
+      params.set('term', searchTerm);
+    } else {
+      params.set('term', 'gluten free vegetarian vegan');
+      params.set('categories', 'vegetarian,vegan,glutenfree,healthfood,juicebars,raw_food');
+    }
 
     const response = await fetch(`${YELP_API_URL}?${params}`, {
       headers: {
