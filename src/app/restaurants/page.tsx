@@ -60,9 +60,10 @@ type YelpRestaurantDetails = {
   photos: string[];
   isOpenNow?: boolean;
   suggestedItems: SuggestedItem[];
-  dataSource?: 'menu_photo' | 'menu' | 'yelp_dishes' | 'none';
+  dataSource?: 'menu_photo' | 'google_photos' | 'menu' | 'yelp_dishes' | 'none';
   dataSourceUrl?: string | null;
   menuPhotosFound?: number;
+  googlePhotosFound?: number;
 };
 
 const cuisineTypes = [
@@ -913,7 +914,17 @@ export default function RestaurantsPage() {
                           rel="noopener noreferrer"
                           className="text-xs font-normal bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full hover:bg-violet-200 transition-colors cursor-pointer"
                         >
-                          from menu photos ↗
+                          from Yelp photos ↗
+                        </a>
+                      )}
+                      {selectedYelpRestaurant.dataSource === 'google_photos' && (
+                        <a
+                          href={selectedYelpRestaurant.dataSourceUrl || `https://www.google.com/maps/search/${encodeURIComponent(selectedYelpRestaurant.name)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+                        >
+                          from Google Maps ↗
                         </a>
                       )}
                       {selectedYelpRestaurant.dataSource === 'menu' && (
@@ -984,7 +995,8 @@ export default function RestaurantsPage() {
 
                     <p className="text-xs text-gray-400 mt-4 italic">
                       * Items are analyzed by AI from {
-                        selectedYelpRestaurant.dataSource === 'menu_photo' ? 'menu photos' :
+                        selectedYelpRestaurant.dataSource === 'menu_photo' ? 'Yelp photos' :
+                        selectedYelpRestaurant.dataSource === 'google_photos' ? 'Google Maps photos' :
                         selectedYelpRestaurant.dataSource === 'menu' ? 'the restaurant\'s website' :
                         'available data'
                       }. Always confirm with the restaurant about ingredients and cross-contamination.

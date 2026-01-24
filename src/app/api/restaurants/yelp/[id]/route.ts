@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 const YELP_API_URL = 'https://api.yelp.com/v3/businesses';
+const GOOGLE_PLACES_API_URL = 'https://places.googleapis.com/v1/places';
 
 interface YelpBusinessDetails {
   id: string;
@@ -256,6 +257,66 @@ Important:
   }
 }
 
+// Search Google Places for a restaurant and get its photos
+async function getGooglePlacesData(
+  restaurantName: string,
+  address: string,
+  googleApiKey: string
+): Promise<{ photoUrls: string[]; googleMapsUrl: string | null }> {
+  try {
+    // First, search for the place using text search
+    const searchResponse = await fetch(
+      `${GOOGLE_PLACES_API_URL}:searchText`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': googleApiKey,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.photos,places.googleMapsUri',
+        },
+        body: JSON.stringify({
+          textQuery: `${restaurantName} ${address}`,
+          maxResultCount: 1,
+        }),
+        signal: AbortSignal.timeout(5000),
+      }
+    );
+
+    if (!searchResponse.ok) {
+      console.error('Google Places search failed:', await searchResponse.text());
+      return { photoUrls: [], googleMapsUrl: null };
+    }
+
+    const searchData = await searchResponse.json();
+    const place = searchData.places?.[0];
+
+    if (!place || !place.photos || place.photos.length === 0) {
+      return { photoUrls: [], googleMapsUrl: place?.googleMapsUri || null };
+    }
+
+    // Get photo URLs - Google requires fetching each photo separately
+    // Photos are returned as references, we need to construct the URL
+    const photoUrls: string[] = [];
+
+    // Take up to 5 photos (prioritizing variety)
+    const photosToFetch = place.photos.slice(0, 5);
+
+    for (const photo of photosToFetch) {
+      // Google Places API v1 photo URL format
+      const photoUrl = `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=800&maxWidthPx=800&key=${googleApiKey}`;
+      photoUrls.push(photoUrl);
+    }
+
+    return {
+      photoUrls,
+      googleMapsUrl: place.googleMapsUri || null,
+    };
+  } catch (error) {
+    console.error('Google Places API error:', error);
+    return { photoUrls: [], googleMapsUrl: null };
+  }
+}
+
 // Analyze text-based menu data
 async function analyzeMenuText(
   openai: OpenAI,
@@ -315,6 +376,7 @@ export async function GET(
 ) {
   const apiKey = process.env.YELP_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
+  const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json(
@@ -326,7 +388,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    // Fetch business details
+    // Fetch business details from Yelp
     const detailsResponse = await fetch(`${YELP_API_URL}/${id}`, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -343,9 +405,10 @@ export async function GET(
 
     const business: YelpBusinessDetails = await detailsResponse.json();
     const categories = business.categories.map((c) => c.title).join(', ');
+    const address = business.location.display_address.join(', ');
 
     // Gather data from multiple sources in parallel
-    const [menuText, yelpData, yelpApiPhotos] = await Promise.all([
+    const [menuText, yelpData, yelpApiPhotos, googleData] = await Promise.all([
       // Try restaurant's own website
       business.attributes?.menu_url
         ? scrapeMenuFromWebsite(business.attributes.menu_url)
@@ -354,10 +417,14 @@ export async function GET(
       scrapeYelpPage(business.url),
       // Try Yelp's photo API
       getYelpMenuPhotos(id, apiKey),
+      // Try Google Places API for photos
+      googleApiKey
+        ? getGooglePlacesData(business.name, address, googleApiKey)
+        : Promise.resolve({ photoUrls: [], googleMapsUrl: null }),
     ]);
 
-    // Combine menu photo sources
-    const allMenuPhotos = [...new Set([...yelpData.menuPhotoUrls, ...yelpApiPhotos])].slice(0, 4);
+    // Combine menu photo sources from Yelp
+    const yelpMenuPhotos = [...new Set([...yelpData.menuPhotoUrls, ...yelpApiPhotos])].slice(0, 4);
 
     let suggestedItems: SuggestedItem[] = [];
     let dataSource = 'none';
@@ -366,18 +433,27 @@ export async function GET(
     if (openaiKey) {
       const openai = new OpenAI({ apiKey: openaiKey });
 
-      // Priority 1: Analyze menu photos with Vision (most reliable)
-      if (allMenuPhotos.length > 0) {
-        console.log(`Analyzing ${allMenuPhotos.length} menu photos for ${business.name}`);
-        suggestedItems = await analyzeMenuPhotos(openai, allMenuPhotos, business.name, categories);
+      // Priority 1: Analyze Yelp menu photos with Vision (most reliable for menus)
+      if (yelpMenuPhotos.length > 0) {
+        console.log(`Analyzing ${yelpMenuPhotos.length} Yelp menu photos for ${business.name}`);
+        suggestedItems = await analyzeMenuPhotos(openai, yelpMenuPhotos, business.name, categories);
         if (suggestedItems.length > 0) {
           dataSource = 'menu_photo';
-          // Link to Yelp photos page
           dataSourceUrl = `${business.url}/photos`;
         }
       }
 
-      // Priority 2: Analyze website menu text
+      // Priority 2: Try Google Places photos (often has food/menu photos)
+      if (suggestedItems.length === 0 && googleData.photoUrls.length > 0) {
+        console.log(`Analyzing ${googleData.photoUrls.length} Google photos for ${business.name}`);
+        suggestedItems = await analyzeMenuPhotos(openai, googleData.photoUrls, business.name, categories);
+        if (suggestedItems.length > 0) {
+          dataSource = 'google_photos';
+          dataSourceUrl = googleData.googleMapsUrl;
+        }
+      }
+
+      // Priority 3: Analyze website menu text
       if (suggestedItems.length === 0 && menuText) {
         console.log(`Analyzing website menu text for ${business.name}`);
         suggestedItems = await analyzeMenuText(
@@ -392,7 +468,7 @@ export async function GET(
         }
       }
 
-      // Priority 3: Use popular dishes from Yelp
+      // Priority 4: Use popular dishes from Yelp
       if (suggestedItems.length === 0 && yelpData.popularDishes.length > 0) {
         console.log(`Analyzing Yelp popular dishes for ${business.name}`);
         suggestedItems = await analyzeMenuText(
@@ -417,14 +493,15 @@ export async function GET(
       reviewCount: business.review_count,
       price: business.price,
       categories,
-      address: business.location.display_address.join(', '),
+      address,
       phone: business.display_phone,
       photos: business.photos,
       isOpenNow: business.hours?.[0]?.is_open_now,
       suggestedItems,
       dataSource,
       dataSourceUrl,
-      menuPhotosFound: allMenuPhotos.length,
+      menuPhotosFound: yelpMenuPhotos.length,
+      googlePhotosFound: googleData.photoUrls.length,
     });
   } catch (error) {
     console.error('Yelp API error:', error);
