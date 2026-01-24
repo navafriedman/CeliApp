@@ -59,10 +59,22 @@ Only respond with the JSON, no other text.`,
       max_tokens: 1000,
     });
 
-    const content = response.choices[0]?.message?.content;
+    let content = response.choices[0]?.message?.content;
     if (!content) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
+
+    // Strip markdown code fences if present
+    content = content.trim();
+    if (content.startsWith('```json')) {
+      content = content.slice(7);
+    } else if (content.startsWith('```')) {
+      content = content.slice(3);
+    }
+    if (content.endsWith('```')) {
+      content = content.slice(0, -3);
+    }
+    content = content.trim();
 
     // Parse the JSON response
     try {
