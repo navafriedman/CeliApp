@@ -143,32 +143,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Getting Started Card */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-teal-500 via-emerald-500 to-green-500 rounded-3xl p-8 text-white">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
-
-        <div className="relative flex flex-col md:flex-row items-center gap-6">
-          <div className="text-6xl bounce-gentle">📔</div>
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="text-2xl font-bold mb-2">
-              Track your journey
-            </h3>
-            <p className="text-white/90 leading-relaxed">
-              Use the Food Diary to log your meals and how you feel. Over time, you&apos;ll discover
-              which foods work best for you!
-            </p>
-          </div>
-          <Link
-            href="/diary"
-            className="flex-shrink-0 bg-white text-teal-600 px-6 py-3 rounded-full font-bold hover:bg-teal-50 transition-colors shadow-lg"
-          >
-            Start Tracking →
-          </Link>
-        </div>
-      </div>
-
       {/* Fun stats or tips could go here */}
       <div className="mt-12 grid grid-cols-3 gap-4 text-center">
         <div className="p-4">
