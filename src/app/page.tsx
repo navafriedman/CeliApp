@@ -22,16 +22,6 @@ const features = [
     hoverText: 'text-pink-600',
   },
   {
-    href: '/restaurants',
-    icon: '🍽️',
-    title: 'Restaurant Tracker',
-    description: 'Keep track of safe places to eat out',
-    gradient: 'from-violet-400 to-purple-400',
-    bgGlow: 'bg-violet-500/20',
-    iconBg: 'bg-violet-100',
-    hoverText: 'text-violet-600',
-  },
-  {
     href: '/guide',
     icon: '📚',
     title: 'Gluten Guide',
@@ -79,8 +69,47 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Featured: Restaurant Finder */}
+      <div className="mb-10">
+        <Link
+          href="/restaurants"
+          className="group block relative overflow-hidden bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]"
+        >
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+
+          <div className="relative flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-shrink-0 text-center md:text-left">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mb-4 md:mb-0">
+                <span className="text-5xl">🍽️</span>
+              </div>
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-3">
+                AI-Powered Menu Analysis
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">
+                Find GF & Veggie Menu Items
+              </h2>
+              <p className="text-white/90 leading-relaxed max-w-xl">
+                Search any restaurant and instantly see which dishes are likely gluten-free and vegetarian.
+                Our AI analyzes menus and food photos to find safe options for you.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <div className="bg-white text-violet-600 px-6 py-3 rounded-full font-bold group-hover:bg-violet-50 transition-colors shadow-lg flex items-center gap-2">
+                <span>Try it now</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
       {/* Feature Cards */}
-      <div className="grid md:grid-cols-2 gap-6 mb-12">
+      <div className="grid md:grid-cols-3 gap-6 mb-12">
         {features.map((feature) => (
           <Link
             key={feature.href}
@@ -115,25 +144,25 @@ export default function Home() {
       </div>
 
       {/* Getting Started Card */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-violet-500 via-pink-500 to-orange-400 rounded-3xl p-8 text-white">
+      <div className="relative overflow-hidden bg-gradient-to-r from-teal-500 via-emerald-500 to-green-500 rounded-3xl p-8 text-white">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
 
         <div className="relative flex flex-col md:flex-row items-center gap-6">
-          <div className="text-6xl bounce-gentle">✨</div>
+          <div className="text-6xl bounce-gentle">📔</div>
           <div className="flex-1 text-center md:text-left">
             <h3 className="text-2xl font-bold mb-2">
-              Ready to start your journey?
+              Track your journey
             </h3>
             <p className="text-white/90 leading-relaxed">
-              Begin by tracking your meals in the Food Diary. Over time, you&apos;ll build a personal
-              database of foods that make you feel amazing!
+              Use the Food Diary to log your meals and how you feel. Over time, you&apos;ll discover
+              which foods work best for you!
             </p>
           </div>
           <Link
             href="/diary"
-            className="flex-shrink-0 bg-white text-violet-600 px-6 py-3 rounded-full font-bold hover:bg-violet-50 transition-colors shadow-lg"
+            className="flex-shrink-0 bg-white text-teal-600 px-6 py-3 rounded-full font-bold hover:bg-teal-50 transition-colors shadow-lg"
           >
             Start Tracking →
           </Link>

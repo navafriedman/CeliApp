@@ -91,8 +91,8 @@ export default function RestaurantsPage() {
     lastVisited: '',
   });
 
-  // Discover tab state
-  const [activeTab, setActiveTab] = useState<'saved' | 'discover'>('saved');
+  // Discover tab state - default to discover since it's the main feature
+  const [activeTab, setActiveTab] = useState<'saved' | 'discover'>('discover');
   const [yelpRestaurants, setYelpRestaurants] = useState<YelpRestaurant[]>([]);
   const [yelpLoading, setYelpLoading] = useState(false);
   const [yelpError, setYelpError] = useState<string | null>(null);
@@ -105,6 +105,9 @@ export default function RestaurantsPage() {
 
   useEffect(() => {
     seedAndFetch();
+    // Auto-fetch Yelp restaurants since Discover is the default tab
+    fetchYelpRestaurants();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const seedAndFetch = async () => {
@@ -314,6 +317,16 @@ export default function RestaurantsPage() {
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-6">
         <button
+          onClick={handleDiscoverTab}
+          className={`px-5 py-2.5 rounded-full font-medium transition-all ${
+            activeTab === 'discover'
+              ? 'bg-gradient-to-r from-violet-400 to-purple-400 text-white shadow-md'
+              : 'bg-white text-gray-600 hover:bg-violet-50 border border-gray-200'
+          }`}
+        >
+          🔍 Discover & Analyze
+        </button>
+        <button
           onClick={() => setActiveTab('saved')}
           className={`px-5 py-2.5 rounded-full font-medium transition-all ${
             activeTab === 'saved'
@@ -322,16 +335,6 @@ export default function RestaurantsPage() {
           }`}
         >
           My Restaurants ({restaurants.length})
-        </button>
-        <button
-          onClick={handleDiscoverTab}
-          className={`px-5 py-2.5 rounded-full font-medium transition-all ${
-            activeTab === 'discover'
-              ? 'bg-gradient-to-r from-violet-400 to-purple-400 text-white shadow-md'
-              : 'bg-white text-gray-600 hover:bg-violet-50 border border-gray-200'
-          }`}
-        >
-          Discover New
         </button>
       </div>
 
