@@ -210,24 +210,25 @@ async function analyzeMenuPhotos(
           content: [
             {
               type: 'text',
-              text: `You are helping someone with celiac disease find safe menu items. These are menu photos from "${restaurantName}" (${categories}).
+              text: `You are helping someone with celiac disease who is also vegetarian find safe menu items. These are menu photos from "${restaurantName}" (${categories}).
 
-Analyze these menu images and extract ALL menu items you can read. For each item, determine:
-1. Is it likely gluten-free? (naturally GF ingredients like rice, meat, vegetables, salads, or explicitly marked GF)
-2. Is it vegetarian?
+Analyze these menu images and extract ONLY menu items that are BOTH:
+1. Gluten-free (naturally GF ingredients like rice, beans, vegetables, tofu, cheese, eggs - or explicitly marked GF)
+2. Vegetarian (no meat, poultry, or fish)
 
-Be thorough - read every item you can see on the menu(s).
+Be thorough - read every item you can see on the menu(s), but ONLY include items that meet BOTH criteria.
 
 Respond ONLY with a JSON array:
 [
-  { "name": "Exact Menu Item Name", "description": "Brief description or ingredients if visible", "isGlutenFree": true/false, "isVegetarian": true/false }
+  { "name": "Exact Menu Item Name", "description": "Brief description or ingredients if visible", "isGlutenFree": true, "isVegetarian": true }
 ]
 
 Important:
+- ONLY include items that are BOTH gluten-free AND vegetarian
 - Include the exact name as written on the menu
-- Be conservative with GF labels - only true if clearly safe or naturally GF
+- Be conservative with GF labels - only include if clearly safe or naturally GF
 - If you can see prices, don't include them in the name
-- If you can't read the menu clearly, return []
+- If you can't read the menu clearly or find no qualifying items, return []
 - Only respond with the JSON array, no other text.`,
             },
             ...imageContent,
@@ -246,7 +247,9 @@ Important:
     if (content.endsWith('```')) content = content.slice(0, -3);
     content = content.trim();
 
-    return JSON.parse(content);
+    // Parse and filter to ensure both GF AND vegetarian
+    const items: SuggestedItem[] = JSON.parse(content);
+    return items.filter(item => item.isGlutenFree && item.isVegetarian);
   } catch (error) {
     console.error('Menu photo analysis error:', error);
     return [];
@@ -266,24 +269,24 @@ async function analyzeMenuText(
       messages: [
         {
           role: 'user',
-          content: `You are helping someone with celiac disease find safe menu items at "${restaurantName}" (${categories}).
+          content: `You are helping someone with celiac disease who is also vegetarian find safe menu items at "${restaurantName}" (${categories}).
 
 ${menuContext}
 
-Based on this menu information, identify specific dishes that are:
-1. Gluten-free (naturally GF or explicitly marked as GF) - be conservative
-2. Vegetarian
+Based on this menu information, identify ONLY dishes that are BOTH:
+1. Gluten-free (naturally GF like rice, beans, vegetables, tofu, cheese, eggs - or explicitly marked GF)
+2. Vegetarian (no meat, poultry, or fish)
 
 Respond ONLY with a JSON array:
 [
-  { "name": "Dish Name", "description": "Brief description", "isGlutenFree": true/false, "isVegetarian": true/false }
+  { "name": "Dish Name", "description": "Brief description", "isGlutenFree": true, "isVegetarian": true }
 ]
 
 Important:
+- ONLY include items that are BOTH gluten-free AND vegetarian
 - Only include real menu items from the data
 - Be conservative with GF labels
-- Include a variety of items
-- If no clear items found, return []
+- If no qualifying items found, return []
 - Only respond with the JSON array.`,
         },
       ],
@@ -298,7 +301,9 @@ Important:
     if (content.endsWith('```')) content = content.slice(0, -3);
     content = content.trim();
 
-    return JSON.parse(content);
+    // Parse and filter to ensure both GF AND vegetarian
+    const items: SuggestedItem[] = JSON.parse(content);
+    return items.filter(item => item.isGlutenFree && item.isVegetarian);
   } catch {
     return [];
   }
