@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type FoodEntry = {
   id: string;
@@ -20,6 +20,9 @@ export default function DiaryPage() {
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     mealType: 'lunch',
     description: '',
@@ -46,6 +49,56 @@ export default function DiaryPage() {
     setLoading(false);
   };
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      setImagePreview(base64);
+
+      // Analyze the image
+      setAnalyzing(true);
+      try {
+        const res = await fetch('/api/analyze-food', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64 }),
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          alert('Could not analyze image: ' + data.error);
+        } else {
+          // Pre-fill the form with AI suggestions
+          setFormData(prev => ({
+            ...prev,
+            description: data.description || prev.description,
+            ingredients: data.ingredients || prev.ingredients,
+            isSafe: data.isSafe ?? prev.isSafe,
+            notes: data.notes ? `AI Note: ${data.notes}` : prev.notes,
+          }));
+        }
+      } catch (err) {
+        console.error('Analysis error:', err);
+        alert('Failed to analyze image');
+      } finally {
+        setAnalyzing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -65,6 +118,7 @@ export default function DiaryPage() {
       rating: 0,
       date: new Date().toISOString().split('T')[0],
     });
+    setImagePreview(null);
     setShowForm(false);
     fetchEntries();
   };
@@ -127,6 +181,57 @@ export default function DiaryPage() {
       {/* Form */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-3xl shadow-xl shadow-teal-500/10 border border-teal-100 mb-8">
+
+          {/* Photo Upload Section */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              📸 Snap a photo of your food
+            </label>
+
+            {!imagePreview ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-teal-200 rounded-2xl p-8 text-center cursor-pointer hover:border-teal-400 hover:bg-teal-50/50 transition-all"
+              >
+                <div className="text-4xl mb-2">📷</div>
+                <p className="text-gray-500 text-sm">Tap to take a photo or upload an image</p>
+                <p className="text-gray-400 text-xs mt-1">AI will guess what you&apos;re eating!</p>
+              </div>
+            ) : (
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="Food preview"
+                  className="w-full h-48 object-cover rounded-2xl"
+                />
+                {analyzing && (
+                  <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
+                    <div className="text-white text-center">
+                      <div className="text-3xl animate-pulse mb-2">🔍</div>
+                      <p className="text-sm">Analyzing your food...</p>
+                    </div>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-600 rounded-full p-2 shadow-md transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
@@ -154,7 +259,12 @@ export default function DiaryPage() {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">What did you eat?</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              What did you eat?
+              {imagePreview && !analyzing && (
+                <span className="text-teal-500 font-normal ml-2">✨ AI-suggested - edit if needed</span>
+              )}
+            </label>
             <input
               type="text"
               value={formData.description}
@@ -166,7 +276,12 @@ export default function DiaryPage() {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Ingredients (optional)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Ingredients (optional)
+              {imagePreview && !analyzing && formData.ingredients && (
+                <span className="text-teal-500 font-normal ml-2">✨ AI-suggested</span>
+              )}
+            </label>
             <input
               type="text"
               value={formData.ingredients}
@@ -178,7 +293,12 @@ export default function DiaryPage() {
 
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Safe for you?</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Safe for you?
+                {imagePreview && !analyzing && (
+                  <span className="text-teal-500 font-normal ml-2">✨ AI-suggested</span>
+                )}
+              </label>
               <div className="flex gap-3 mt-2">
                 <button
                   type="button"
@@ -235,7 +355,12 @@ export default function DiaryPage() {
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Notes (optional)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Notes (optional)
+              {imagePreview && !analyzing && formData.notes && (
+                <span className="text-teal-500 font-normal ml-2">✨ AI note included</span>
+              )}
+            </label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -247,9 +372,10 @@ export default function DiaryPage() {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-teal-400 to-emerald-400 text-white py-3 rounded-xl font-semibold shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 transition-all"
+            disabled={analyzing}
+            className="w-full bg-gradient-to-r from-teal-400 to-emerald-400 text-white py-3 rounded-xl font-semibold shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 transition-all disabled:opacity-50"
           >
-            Save Entry
+            {analyzing ? 'Analyzing...' : 'Save Entry'}
           </button>
         </form>
       )}
