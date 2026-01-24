@@ -154,7 +154,7 @@ export default function Home() {
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-6">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-          <h3 className="text-lg font-semibold text-gray-600">More Tools</h3>
+          <h3 className="text-lg font-semibold text-gray-600">Your GF Toolkit</h3>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
         </div>
       </div>
