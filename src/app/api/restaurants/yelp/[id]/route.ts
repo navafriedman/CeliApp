@@ -21,13 +21,110 @@ interface YelpBusinessDetails {
     open: { start: string; end: string; day: number }[];
     is_open_now: boolean;
   }[];
+  attributes?: {
+    menu_url?: string;
+  };
 }
 
-interface YelpReview {
-  id: string;
-  text: string;
-  rating: number;
-  user: { name: string };
+interface SuggestedItem {
+  name: string;
+  description: string;
+  isGlutenFree: boolean;
+  isVegetarian: boolean;
+}
+
+// Try to fetch and extract menu text from a restaurant's website
+async function scrapeMenuFromWebsite(url: string): Promise<string | null> {
+  try {
+    // Try common menu URL patterns
+    const baseUrl = new URL(url).origin;
+    const menuUrls = [
+      url, // Yelp-provided menu URL
+      `${baseUrl}/menu`,
+      `${baseUrl}/food-menu`,
+      `${baseUrl}/our-menu`,
+    ];
+
+    for (const menuUrl of menuUrls) {
+      try {
+        const response = await fetch(menuUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; CeliApp/1.0; +https://celiapp.com)',
+          },
+          signal: AbortSignal.timeout(5000), // 5 second timeout
+        });
+
+        if (!response.ok) continue;
+
+        const html = await response.text();
+
+        // Extract text content, focusing on menu-like content
+        // Remove scripts, styles, and HTML tags
+        let text = html
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+          .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+          .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        // If we got substantial content, return it (truncate to avoid token limits)
+        if (text.length > 500) {
+          return text.slice(0, 8000); // Limit to ~8k chars for AI processing
+        }
+      } catch {
+        // Continue to next URL
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Fetch Yelp's "popular dishes" if available via web scraping
+async function getYelpPopularDishes(yelpUrl: string): Promise<string[]> {
+  try {
+    const response = await fetch(yelpUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CeliApp/1.0)',
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) return [];
+
+    const html = await response.text();
+
+    // Look for popular dishes in the Yelp page
+    // Yelp often has these in specific data attributes or sections
+    const dishes: string[] = [];
+
+    // Match patterns like "Popular dishes" section content
+    const dishMatches = html.match(/(?:popular|recommended|must.try|signature)[\s\S]{0,500}?(?=<\/section|<\/div>)/gi);
+    if (dishMatches) {
+      for (const match of dishMatches) {
+        // Extract food item names (usually in spans or links)
+        const itemMatches = match.match(/>([A-Z][^<]{3,40})</g);
+        if (itemMatches) {
+          for (const item of itemMatches) {
+            const cleaned = item.replace(/^>|<$/g, '').trim();
+            if (cleaned.length > 3 && cleaned.length < 50 && !cleaned.includes('http')) {
+              dishes.push(cleaned);
+            }
+          }
+        }
+      }
+    }
+
+    return [...new Set(dishes)].slice(0, 20); // Dedupe and limit
+  } catch {
+    return [];
+  }
 }
 
 export async function GET(
@@ -64,52 +161,67 @@ export async function GET(
 
     const business: YelpBusinessDetails = await detailsResponse.json();
 
-    // Fetch reviews to analyze for menu items
-    const reviewsResponse = await fetch(`${YELP_API_URL}/${id}/reviews?limit=20`, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: 'application/json',
-      },
-    });
+    // Gather menu data from multiple sources in parallel
+    const [menuText, popularDishes] = await Promise.all([
+      // Try to scrape menu from restaurant's website
+      business.attributes?.menu_url
+        ? scrapeMenuFromWebsite(business.attributes.menu_url)
+        : Promise.resolve(null),
+      // Get popular dishes from Yelp page
+      getYelpPopularDishes(business.url),
+    ]);
 
-    let reviews: YelpReview[] = [];
-    if (reviewsResponse.ok) {
-      const reviewsData = await reviewsResponse.json();
-      reviews = reviewsData.reviews || [];
-    }
+    let suggestedItems: SuggestedItem[] = [];
+    let dataSource = 'none';
 
-    // Use AI to analyze reviews and suggest GF/vegetarian items
-    let suggestedItems: { name: string; description: string; isGlutenFree: boolean; isVegetarian: boolean }[] = [];
-
-    if (openaiKey && reviews.length > 0) {
+    if (openaiKey && (menuText || popularDishes.length > 0)) {
       try {
         const openai = new OpenAI({ apiKey: openaiKey });
 
-        const reviewTexts = reviews.map((r) => r.text).join('\n---\n');
+        // Build context based on available data
+        let menuContext = '';
+        if (menuText) {
+          menuContext = `Menu content from restaurant website:\n${menuText}\n\n`;
+          dataSource = 'menu';
+        }
+        if (popularDishes.length > 0) {
+          menuContext += `Popular dishes from Yelp: ${popularDishes.join(', ')}\n\n`;
+          if (!menuText) dataSource = 'yelp_dishes';
+        }
 
         const aiResponse = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [
             {
               role: 'user',
-              content: `Based on these Yelp reviews for "${business.name}" (a ${business.categories.map((c) => c.title).join(', ')} restaurant), extract any menu items mentioned and identify which ones are likely:
-1. Gluten-free (or can be made GF)
+              content: `You are helping someone with celiac disease find safe menu items at "${business.name}" (a ${business.categories.map((c) => c.title).join(', ')} restaurant).
+
+${menuContext}
+
+Based on this menu information, identify specific dishes that are:
+1. Gluten-free (naturally GF or explicitly marked as GF) - be conservative, only mark as GF if confident
 2. Vegetarian
 
-Reviews:
-${reviewTexts}
+For each item, provide:
+- The exact dish name as it appears on the menu
+- A brief description
+- Whether it's gluten-free (true only if naturally GF like rice/salad dishes, or explicitly marked)
+- Whether it's vegetarian
 
-Respond in JSON format with an array of items:
+Respond in JSON format:
 [
-  { "name": "Item name", "description": "Brief description from reviews", "isGlutenFree": true/false, "isVegetarian": true/false }
+  { "name": "Dish Name", "description": "Brief description", "isGlutenFree": true/false, "isVegetarian": true/false }
 ]
 
-Only include items that are mentioned in reviews. If no specific items are mentioned, return an empty array [].
-Focus on items that are explicitly mentioned as GF or vegetarian, or naturally would be (like salads, rice dishes, etc).
-Only respond with the JSON array, no other text.`,
+Important:
+- Only include real menu items you found in the data
+- Be conservative with gluten-free labels - when in doubt, mark as false
+- Include a good variety of items (appetizers, mains, sides)
+- If no clear menu items are found, return an empty array []
+- Only respond with the JSON array, no other text.`,
             },
           ],
-          max_tokens: 1000,
+          max_tokens: 2000,
         });
 
         let content = aiResponse.choices[0]?.message?.content || '[]';
@@ -133,7 +245,6 @@ Only respond with the JSON array, no other text.`,
         }
       } catch (aiError) {
         console.error('AI analysis error:', aiError);
-        // Continue without AI suggestions
       }
     }
 
@@ -151,6 +262,7 @@ Only respond with the JSON array, no other text.`,
       photos: business.photos,
       isOpenNow: business.hours?.[0]?.is_open_now,
       suggestedItems,
+      dataSource, // Let the frontend know where data came from
     });
   } catch (error) {
     console.error('Yelp API error:', error);

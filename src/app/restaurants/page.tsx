@@ -60,6 +60,7 @@ type YelpRestaurantDetails = {
   photos: string[];
   isOpenNow?: boolean;
   suggestedItems: SuggestedItem[];
+  dataSource?: 'menu' | 'yelp_dishes' | 'none';
 };
 
 const cuisineTypes = [
@@ -903,13 +904,32 @@ export default function RestaurantsPage() {
                   <div className="border-t pt-4">
                     <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                       🥗 Likely GF & Vegetarian Items
-                      <span className="text-xs font-normal text-gray-500">(based on reviews)</span>
+                      {selectedYelpRestaurant.dataSource === 'menu' && (
+                        <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                          from menu
+                        </span>
+                      )}
+                      {selectedYelpRestaurant.dataSource === 'yelp_dishes' && (
+                        <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                          from Yelp
+                        </span>
+                      )}
                     </h3>
 
                     {selectedYelpRestaurant.suggestedItems.length === 0 ? (
-                      <p className="text-gray-500 text-sm italic">
-                        No specific menu items found in reviews. Check the restaurant&apos;s menu directly for GF/vegetarian options.
-                      </p>
+                      <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                        <p className="text-amber-800 text-sm">
+                          No menu data available for this restaurant. This could be because:
+                        </p>
+                        <ul className="text-amber-700 text-sm mt-2 list-disc list-inside space-y-1">
+                          <li>The restaurant doesn&apos;t have an online menu</li>
+                          <li>Their website couldn&apos;t be accessed</li>
+                          <li>Menu format wasn&apos;t recognized</li>
+                        </ul>
+                        <p className="text-amber-800 text-sm mt-3">
+                          Try checking their Yelp page or calling ahead to ask about GF options.
+                        </p>
+                      </div>
                     ) : (
                       <div className="space-y-3">
                         {selectedYelpRestaurant.suggestedItems.map((item, index) => (
@@ -941,7 +961,7 @@ export default function RestaurantsPage() {
                     )}
 
                     <p className="text-xs text-gray-400 mt-4 italic">
-                      * Items are suggested based on AI analysis of Yelp reviews. Always confirm with the restaurant about ingredients and preparation methods.
+                      * Items are analyzed by AI from {selectedYelpRestaurant.dataSource === 'menu' ? 'the restaurant\'s menu' : 'available data'}. Always confirm with the restaurant about ingredients and cross-contamination.
                     </p>
                   </div>
 
