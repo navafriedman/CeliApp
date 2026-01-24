@@ -356,6 +356,7 @@ export async function GET(
 
     let suggestedItems: SuggestedItem[] = [];
     let dataSource = 'none';
+    let dataSourceUrl: string | null = null;
 
     if (openaiKey) {
       const openai = new OpenAI({ apiKey: openaiKey });
@@ -366,6 +367,8 @@ export async function GET(
         suggestedItems = await analyzeMenuPhotos(openai, allMenuPhotos, business.name, categories);
         if (suggestedItems.length > 0) {
           dataSource = 'menu_photo';
+          // Link to Yelp photos page
+          dataSourceUrl = `${business.url}/photos`;
         }
       }
 
@@ -380,6 +383,7 @@ export async function GET(
         );
         if (suggestedItems.length > 0) {
           dataSource = 'menu';
+          dataSourceUrl = business.attributes?.menu_url || null;
         }
       }
 
@@ -394,6 +398,7 @@ export async function GET(
         );
         if (suggestedItems.length > 0) {
           dataSource = 'yelp_dishes';
+          dataSourceUrl = business.url;
         }
       }
     }
@@ -413,6 +418,7 @@ export async function GET(
       isOpenNow: business.hours?.[0]?.is_open_now,
       suggestedItems,
       dataSource,
+      dataSourceUrl,
       menuPhotosFound: allMenuPhotos.length,
     });
   } catch (error) {

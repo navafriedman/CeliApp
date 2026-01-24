@@ -61,6 +61,7 @@ type YelpRestaurantDetails = {
   isOpenNow?: boolean;
   suggestedItems: SuggestedItem[];
   dataSource?: 'menu_photo' | 'menu' | 'yelp_dishes' | 'none';
+  dataSourceUrl?: string | null;
   menuPhotosFound?: number;
 };
 
@@ -906,19 +907,34 @@ export default function RestaurantsPage() {
                     <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                       🥗 Likely GF & Vegetarian Items
                       {selectedYelpRestaurant.dataSource === 'menu_photo' && (
-                        <span className="text-xs font-normal bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
-                          from menu photos
-                        </span>
+                        <a
+                          href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-normal bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full hover:bg-violet-200 transition-colors cursor-pointer"
+                        >
+                          from menu photos ↗
+                        </a>
                       )}
                       {selectedYelpRestaurant.dataSource === 'menu' && (
-                        <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                          from website menu
-                        </span>
+                        <a
+                          href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full hover:bg-green-200 transition-colors cursor-pointer"
+                        >
+                          from website menu ↗
+                        </a>
                       )}
                       {selectedYelpRestaurant.dataSource === 'yelp_dishes' && (
-                        <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                          from Yelp
-                        </span>
+                        <a
+                          href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full hover:bg-amber-200 transition-colors cursor-pointer"
+                        >
+                          from Yelp ↗
+                        </a>
                       )}
                     </h3>
 
