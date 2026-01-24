@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -61,7 +62,13 @@ export default function Home() {
 
         <div className="relative">
           <div className="inline-block mb-4">
-            <span className="text-5xl float">✨</span>
+            <Image
+              src="/celia-logo.svg"
+              alt="Celia"
+              width={80}
+              height={80}
+              className="float"
+            />
           </div>
           <h1 className="text-5xl md:text-6xl font-semibold mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>
             <span className="bg-gradient-to-r from-violet-600 to-pink-500 bg-clip-text text-transparent">CeliApp</span>

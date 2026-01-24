@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Celia v3: Geometric/abstract girl - Notion-style avatar -->
+
+  <!-- Background -->
+  <rect x="10" y="10" width="80" height="80" rx="20" fill="url(#grad1)"/>
+
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A78BFA"/>
+      <stop offset="100%" style="stop-color:#EC4899"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Hair - geometric bob -->
+  <path d="M30 48 L30 35 Q30 22, 50 20 Q70 22, 70 35 L70 48 Q70 58, 62 58 L62 42 Q62 30, 50 28 Q38 30, 38 42 L38 58 Q30 58, 30 48 Z" fill="#FFFFFF"/>
+
+  <!-- Face -->
+  <circle cx="50" cy="46" r="14" fill="#FDE68A"/>
+
+  <!-- Eyes - dots -->
+  <circle cx="45" cy="44" r="2" fill="#1F2937"/>
+  <circle cx="55" cy="44" r="2" fill="#1F2937"/>
+
+  <!-- Closed happy eyes alternative (wink) -->
+  <!-- <path d="M43 44 Q45 42, 47 44" stroke="#1F2937" stroke-width="2" fill="none"/> -->
+
+  <!-- Smile -->
+  <path d="M45 51 Q50 55, 55 51" stroke="#1F2937" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Tiny heart accessory -->
+  <path d="M65 30 C65 28, 68 28, 68 30 C68 28, 71 28, 71 30 C71 33, 68 35, 68 35 C68 35, 65 33, 65 30" fill="#FFFFFF"/>
+</svg>

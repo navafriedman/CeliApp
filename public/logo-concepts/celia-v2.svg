@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Celia v2: Ultra minimal - just essential shapes -->
+
+  <!-- Hair (simple curved shape) -->
+  <path d="M28 50 Q28 22, 50 18 Q72 22, 72 50 Q72 62, 60 62 L60 45 Q60 32, 50 30 Q40 32, 40 45 L40 62 Q28 62, 28 50 Z" fill="#8B5CF6"/>
+
+  <!-- Face - simple circle -->
+  <circle cx="50" cy="48" r="16" fill="#FBBF24"/>
+
+  <!-- Eyes - minimal lines -->
+  <line x1="43" y1="46" x2="47" y2="46" stroke="#1F2937" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="53" y1="46" x2="57" y2="46" stroke="#1F2937" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Smile - simple arc -->
+  <path d="M45 53 Q50 57, 55 53" stroke="#1F2937" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Small sparkle/star accent -->
+  <path d="M70 25 L72 30 L77 30 L73 34 L75 39 L70 36 L65 39 L67 34 L63 30 L68 30 Z" fill="#EC4899" opacity="0.8"/>
+</svg>

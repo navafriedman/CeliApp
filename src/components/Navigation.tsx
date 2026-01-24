@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 
@@ -22,8 +23,14 @@ export default function Navigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-1.5 group">
-            <span className="text-xl group-hover:scale-110 transition-transform">✨</span>
+          <Link href="/" className="flex items-center gap-2 group">
+            <Image
+              src="/celia-logo.svg"
+              alt="Celia"
+              width={36}
+              height={36}
+              className="group-hover:scale-110 transition-transform"
+            />
             <span className="text-xl font-semibold bg-gradient-to-r from-violet-600 to-pink-500 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-poppins)' }}>
               CeliApp
             </span>

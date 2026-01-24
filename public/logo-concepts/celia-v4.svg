@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Celia v4: Super minimal silhouette style -->
+
+  <!-- Circle background -->
+  <circle cx="50" cy="50" r="45" fill="#7C3AED"/>
+
+  <!-- Face silhouette (white) -->
+  <circle cx="50" cy="45" r="18" fill="#FFFFFF"/>
+
+  <!-- Hair shape -->
+  <path d="M32 42 Q32 20, 50 16 Q68 20, 68 42 L68 52 Q68 60, 58 60 L58 40 Q58 28, 50 26 Q42 28, 42 40 L42 60 Q32 60, 32 52 Z" fill="#FFFFFF"/>
+
+  <!-- Features in purple -->
+  <!-- Eyes -->
+  <circle cx="44" cy="43" r="2.5" fill="#7C3AED"/>
+  <circle cx="56" cy="43" r="2.5" fill="#7C3AED"/>
+
+  <!-- Smile -->
+  <path d="M44 50 Q50 54, 56 50" stroke="#7C3AED" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Small wheat/grain crossed out subtly - representing GF -->
+  <g transform="translate(68, 20) scale(0.4)">
+    <path d="M15 0 L15 30" stroke="#FDE68A" stroke-width="3"/>
+    <ellipse cx="15" cy="6" rx="6" ry="4" fill="#FDE68A"/>
+    <ellipse cx="15" cy="14" rx="6" ry="4" fill="#FDE68A"/>
+    <ellipse cx="15" cy="22" rx="6" ry="4" fill="#FDE68A"/>
+    <line x1="5" y1="0" x2="25" y2="28" stroke="#EC4899" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
