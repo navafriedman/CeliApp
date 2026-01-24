@@ -111,40 +111,51 @@ export default function Home() {
 
             {/* Search Form */}
             <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                  <input
-                    type="text"
-                    placeholder="Restaurant name or cuisine..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
-                  />
+              <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-xl">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-violet-400">🔍</span>
+                    <input
+                      type="text"
+                      placeholder="Restaurant name or cuisine..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="flex-1 sm:flex-initial sm:w-48 relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-violet-400">📍</span>
+                    <input
+                      type="text"
+                      placeholder="ZIP or city..."
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="bg-gradient-to-r from-violet-500 to-purple-500 text-white px-8 py-3 rounded-xl font-bold hover:from-violet-600 hover:to-purple-600 transition-all shadow-md flex items-center justify-center gap-2"
+                  >
+                    <span>Search</span>
+                    <span>→</span>
+                  </button>
                 </div>
-                <div className="flex-1 sm:flex-initial sm:w-48 relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📍</span>
-                  <input
-                    type="text"
-                    placeholder="ZIP or city..."
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="bg-white text-violet-600 px-8 py-4 rounded-xl font-bold hover:bg-violet-50 transition-colors shadow-lg flex items-center justify-center gap-2"
-                >
-                  <span>Search</span>
-                  <span>→</span>
-                </button>
               </div>
               <p className="text-center text-white/70 text-sm mt-4">
                 Try &quot;Ethiopian&quot; in &quot;Brooklyn&quot; or just enter a ZIP code to explore nearby
               </p>
             </form>
           </div>
+        </div>
+      </div>
+
+      {/* More Tools Section */}
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+          <h3 className="text-lg font-semibold text-gray-600">More Tools</h3>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
         </div>
       </div>
 
