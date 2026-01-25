@@ -161,7 +161,7 @@ export default function DiaryPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-emerald-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-teal-600">
             Food Diary
           </h1>
           <p className="text-gray-500 mt-1">Track your meals and how they make you feel</p>
@@ -171,7 +171,7 @@ export default function DiaryPage() {
           className={`px-5 py-2.5 rounded-full font-semibold transition-all ${
             showForm
               ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-              : 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50'
+              : 'bg-teal-500 text-white shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 hover:bg-teal-600'
           }`}
         >
           {showForm ? 'Cancel' : '+ Add Entry'}
@@ -305,7 +305,7 @@ export default function DiaryPage() {
                   onClick={() => setFormData({ ...formData, isSafe: true })}
                   className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${
                     formData.isSafe
-                      ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white shadow-md'
+                      ? 'bg-teal-500 text-white shadow-md'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -316,7 +316,7 @@ export default function DiaryPage() {
                   onClick={() => setFormData({ ...formData, isSafe: false })}
                   className={`flex-1 py-2.5 rounded-xl font-medium transition-all ${
                     !formData.isSafe
-                      ? 'bg-gradient-to-r from-red-400 to-pink-400 text-white shadow-md'
+                      ? 'bg-red-500 text-white shadow-md'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -373,7 +373,7 @@ export default function DiaryPage() {
           <button
             type="submit"
             disabled={analyzing}
-            className="w-full bg-gradient-to-r from-teal-400 to-emerald-400 text-white py-3 rounded-xl font-semibold shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 transition-all disabled:opacity-50"
+            className="w-full bg-teal-500 text-white py-3 rounded-xl font-semibold shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 hover:bg-teal-600 transition-all disabled:opacity-50"
           >
             {analyzing ? 'Analyzing...' : 'Save Entry'}
           </button>
@@ -409,7 +409,7 @@ export default function DiaryPage() {
                     <span className="text-2xl">{getMealIcon(entry.mealType)}</span>
                     <span className="font-semibold text-gray-800 text-lg">{entry.description}</span>
                     {!entry.isSafe && (
-                      <span className="text-xs bg-gradient-to-r from-red-400 to-pink-400 text-white px-2.5 py-1 rounded-full font-medium">
+                      <span className="text-xs bg-red-500 text-white px-2.5 py-1 rounded-full font-medium">
                         Not Safe
                       </span>
                     )}

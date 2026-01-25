@@ -11,7 +11,7 @@ const features = [
     icon: '📔',
     title: 'Food Diary',
     description: 'Track your meals and discover what works for you',
-    gradient: 'from-teal-400 to-emerald-400',
+    color: 'text-teal-600',
     bgGlow: 'bg-teal-500/20',
     iconBg: 'bg-teal-100',
     hoverText: 'text-teal-600',
@@ -21,7 +21,7 @@ const features = [
     icon: '👩‍🍳',
     title: 'Recipe Box',
     description: 'Save and organize your favorite gluten-free recipes',
-    gradient: 'from-pink-400 to-rose-400',
+    color: 'text-pink-600',
     bgGlow: 'bg-pink-500/20',
     iconBg: 'bg-pink-100',
     hoverText: 'text-pink-600',
@@ -31,7 +31,7 @@ const features = [
     icon: '📚',
     title: 'Gluten Guide',
     description: 'Quick reference for ingredients and hidden gluten',
-    gradient: 'from-amber-400 to-orange-400',
+    color: 'text-amber-600',
     bgGlow: 'bg-amber-500/20',
     iconBg: 'bg-amber-100',
     hoverText: 'text-amber-600',
@@ -71,7 +71,7 @@ export default function Home() {
             />
           </div>
           <h1 className="text-5xl md:text-6xl font-semibold mb-4" style={{ fontFamily: 'var(--font-poppins)' }}>
-            <span className="bg-gradient-to-r from-violet-600 to-pink-500 bg-clip-text text-transparent">CeliApp</span>
+            <span className="text-violet-600">CeliApp</span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Your playful companion for living your{' '}
@@ -82,7 +82,7 @@ export default function Home() {
 
       {/* Featured: Restaurant Search */}
       <div className="mb-10">
-        <div className="relative overflow-hidden bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 rounded-3xl p-8 text-white shadow-xl">
+        <div className="relative overflow-hidden bg-violet-600 rounded-3xl p-8 text-white shadow-xl">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
@@ -130,7 +130,7 @@ export default function Home() {
                   </div>
                   <button
                     type="submit"
-                    className="bg-gradient-to-r from-violet-500 to-purple-500 text-white px-8 py-3 rounded-xl font-bold hover:from-violet-600 hover:to-purple-600 transition-all shadow-md flex items-center justify-center gap-2"
+                    className="bg-violet-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-violet-700 transition-all shadow-md flex items-center justify-center gap-2"
                   >
                     <span>Search</span>
                     <span>→</span>
@@ -180,7 +180,7 @@ export default function Home() {
               </p>
 
               {/* Arrow indicator */}
-              <div className={`mt-4 inline-flex items-center gap-2 text-sm font-semibold bg-gradient-to-r ${feature.gradient} bg-clip-text text-transparent`}>
+              <div className={`mt-4 inline-flex items-center gap-2 text-sm font-semibold ${feature.color}`}>
                 <span>Get started</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </div>

@@ -29,18 +29,18 @@ const categories = [
 
 const statusStyles = {
   safe: {
-    card: 'bg-gradient-to-r from-teal-50 to-emerald-50 border-teal-200',
-    badge: 'bg-gradient-to-r from-teal-400 to-emerald-400 text-white',
+    card: 'bg-teal-50 border-teal-200',
+    badge: 'bg-teal-500 text-white',
     icon: '✓',
   },
   unsafe: {
-    card: 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200',
-    badge: 'bg-gradient-to-r from-red-400 to-pink-400 text-white',
+    card: 'bg-red-50 border-red-200',
+    badge: 'bg-red-500 text-white',
     icon: '✗',
   },
   check: {
-    card: 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200',
-    badge: 'bg-gradient-to-r from-amber-400 to-yellow-400 text-white',
+    card: 'bg-amber-50 border-amber-200',
+    badge: 'bg-amber-500 text-white',
     icon: '?',
   },
 };
@@ -122,7 +122,7 @@ export default function GuidePage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-amber-600">
             Gluten Guide
           </h1>
           <p className="text-gray-500 mt-1">Quick reference for ingredients and foods</p>
@@ -132,7 +132,7 @@ export default function GuidePage() {
           className={`px-5 py-2.5 rounded-full font-semibold transition-all ${
             showForm
               ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-              : 'bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50'
+              : 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:bg-amber-600'
           }`}
         >
           {showForm ? 'Cancel' : '+ Add Item'}
@@ -224,7 +224,7 @@ export default function GuidePage() {
           </div>
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-white py-3 rounded-xl font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all"
+            className="w-full bg-amber-500 text-white py-3 rounded-xl font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:bg-amber-600 transition-all"
           >
             Add to Guide
           </button>
@@ -311,7 +311,7 @@ export default function GuidePage() {
       )}
 
       {/* Quick tips */}
-      <div className="mt-8 relative overflow-hidden bg-gradient-to-r from-amber-400 via-orange-400 to-pink-400 rounded-3xl p-8 text-white">
+      <div className="mt-8 relative overflow-hidden bg-amber-500 rounded-3xl p-8 text-white">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />

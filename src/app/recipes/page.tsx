@@ -135,7 +135,7 @@ export default function RecipesPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-pink-600">
             Recipe Box
           </h1>
           <p className="text-gray-500 mt-1">Your collection of gluten-free recipes</p>
@@ -145,7 +145,7 @@ export default function RecipesPage() {
           className={`px-5 py-2.5 rounded-full font-semibold transition-all ${
             showForm
               ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-              : 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50'
+              : 'bg-pink-500 text-white shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 hover:bg-pink-600'
           }`}
         >
           {showForm ? 'Cancel' : '+ Add Recipe'}
@@ -273,7 +273,7 @@ export default function RecipesPage() {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white py-3 rounded-xl font-semibold shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 transition-all"
+            className="w-full bg-pink-500 text-white py-3 rounded-xl font-semibold shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 hover:bg-pink-600 transition-all"
           >
             Save Recipe
           </button>
@@ -284,7 +284,7 @@ export default function RecipesPage() {
       {dailyRecipe && (
         <div
           onClick={() => setSelectedRecipe(dailyRecipe)}
-          className="relative overflow-hidden bg-gradient-to-r from-pink-400 via-rose-400 to-orange-400 p-6 rounded-3xl mb-8 cursor-pointer hover:shadow-xl transition-all text-white"
+          className="relative overflow-hidden bg-pink-500 p-6 rounded-3xl mb-8 cursor-pointer hover:shadow-xl transition-all text-white"
         >
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
@@ -326,7 +326,7 @@ export default function RecipesPage() {
           onClick={() => setFilter('all')}
           className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
             filter === 'all'
-              ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md'
+              ? 'bg-pink-500 text-white shadow-md'
               : 'bg-white text-gray-600 hover:bg-pink-50 border border-gray-200'
           }`}
         >
@@ -336,7 +336,7 @@ export default function RecipesPage() {
           onClick={() => setFilter('favorites')}
           className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
             filter === 'favorites'
-              ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md'
+              ? 'bg-pink-500 text-white shadow-md'
               : 'bg-white text-gray-600 hover:bg-pink-50 border border-gray-200'
           }`}
         >
@@ -348,7 +348,7 @@ export default function RecipesPage() {
             onClick={() => setFilter(cat)}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
               filter === cat
-                ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md'
+                ? 'bg-pink-500 text-white shadow-md'
                 : 'bg-white text-gray-600 hover:bg-pink-50 border border-gray-200'
             }`}
           >
@@ -393,7 +393,7 @@ export default function RecipesPage() {
                 <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                   <span className="text-xl">🥗</span> Ingredients
                 </h3>
-                <div className="bg-gradient-to-br from-pink-50 to-rose-50 p-4 rounded-2xl">
+                <div className="bg-pink-50 p-4 rounded-2xl">
                   {selectedRecipe.ingredients.split('\n').map((ing, i) => (
                     <div key={i} className="py-1.5 border-b border-pink-100 last:border-0 text-gray-700">{ing}</div>
                   ))}
@@ -427,7 +427,7 @@ export default function RecipesPage() {
                   onClick={() => toggleFavorite(selectedRecipe)}
                   className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
                     selectedRecipe.isFavorite
-                      ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md'
+                      ? 'bg-pink-500 text-white shadow-md'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -488,7 +488,7 @@ export default function RecipesPage() {
               </div>
               <div className="flex gap-2 mt-4 text-xs">
                 {recipe.category && (
-                  <span className="bg-gradient-to-r from-pink-100 to-rose-100 text-pink-600 px-3 py-1 rounded-full font-medium">
+                  <span className="bg-pink-100 text-pink-600 px-3 py-1 rounded-full font-medium">
                     {recipe.category}
                   </span>
                 )}

@@ -322,7 +322,7 @@ function RestaurantsPageContent() {
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-violet-600">
             Restaurant Tracker
           </h1>
           <p className="text-gray-500 mt-1">Keep track of safe places to eat</p>
@@ -333,7 +333,7 @@ function RestaurantsPageContent() {
             className={`px-5 py-2.5 rounded-full font-semibold transition-all ${
               showForm
                 ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                : 'bg-gradient-to-r from-violet-400 to-purple-400 text-white shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50'
+                : 'bg-violet-500 text-white shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:bg-violet-600'
             }`}
           >
             {showForm ? 'Cancel' : '+ Add Restaurant'}
@@ -347,7 +347,7 @@ function RestaurantsPageContent() {
           onClick={handleDiscoverTab}
           className={`px-5 py-2.5 rounded-full font-medium transition-all ${
             activeTab === 'discover'
-              ? 'bg-gradient-to-r from-violet-400 to-purple-400 text-white shadow-md'
+              ? 'bg-violet-500 text-white shadow-md'
               : 'bg-white text-gray-600 hover:bg-violet-50 border border-gray-200'
           }`}
         >
@@ -357,7 +357,7 @@ function RestaurantsPageContent() {
           onClick={() => setActiveTab('saved')}
           className={`px-5 py-2.5 rounded-full font-medium transition-all ${
             activeTab === 'saved'
-              ? 'bg-gradient-to-r from-violet-400 to-purple-400 text-white shadow-md'
+              ? 'bg-violet-500 text-white shadow-md'
               : 'bg-white text-gray-600 hover:bg-violet-50 border border-gray-200'
           }`}
         >

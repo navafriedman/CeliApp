@@ -7,11 +7,11 @@ import { usePathname } from 'next/navigation';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 
 const navItems = [
-  { href: '/', label: 'Home', icon: '🏠', color: 'from-violet-400 to-purple-400' },
-  { href: '/diary', label: 'Diary', icon: '📔', color: 'from-teal-400 to-emerald-400' },
-  { href: '/recipes', label: 'Recipes', icon: '👩‍🍳', color: 'from-pink-400 to-rose-400' },
-  { href: '/restaurants', label: 'Restaurants', icon: '🍽️', color: 'from-violet-400 to-purple-400' },
-  { href: '/guide', label: 'Guide', icon: '📚', color: 'from-amber-400 to-orange-400' },
+  { href: '/', label: 'Home', icon: '🏠', color: 'bg-violet-500' },
+  { href: '/diary', label: 'Diary', icon: '📔', color: 'bg-teal-500' },
+  { href: '/recipes', label: 'Recipes', icon: '👩‍🍳', color: 'bg-pink-500' },
+  { href: '/restaurants', label: 'Restaurants', icon: '🍽️', color: 'bg-violet-500' },
+  { href: '/guide', label: 'Guide', icon: '📚', color: 'bg-amber-500' },
 ];
 
 export default function Navigation() {
@@ -31,7 +31,7 @@ export default function Navigation() {
               height={36}
               className="group-hover:scale-110 transition-transform"
             />
-            <span className="text-xl font-semibold bg-gradient-to-r from-violet-600 to-pink-500 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-poppins)' }}>
+            <span className="text-xl font-semibold text-violet-600" style={{ fontFamily: 'var(--font-poppins)' }}>
               CeliApp
             </span>
           </Link>
@@ -47,7 +47,7 @@ export default function Navigation() {
                   href={item.href}
                   className={`relative px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 group ${
                     isActive
-                      ? `bg-gradient-to-r ${item.color} text-white shadow-md`
+                      ? `${item.color} text-white shadow-md`
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
                   }`}
                 >
@@ -114,7 +114,7 @@ export default function Navigation() {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? `bg-gradient-to-r ${item.color} text-white shadow-md`
+                        ? `${item.color} text-white shadow-md`
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
                     }`}
                   >
