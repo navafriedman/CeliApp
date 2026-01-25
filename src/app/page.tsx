@@ -20,7 +20,7 @@ const features = [
     href: '/recipes',
     icon: '👩‍🍳',
     title: 'Recipe Box',
-    description: 'Save and organize your favorite gluten-free recipes',
+    description: 'Discover AI-generated recipes or save your own favorites',
     color: 'text-pink-600',
     bgGlow: 'bg-pink-500/20',
     iconBg: 'bg-pink-100',
@@ -146,12 +146,13 @@ export default function Home() {
       </div>
 
       {/* More Tools Section */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-          <h3 className="text-lg font-semibold text-gray-600">Your GF Toolkit</h3>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-        </div>
+      <div className="mb-8 text-center">
+        <h3 className="text-2xl font-bold text-gray-800 mb-2" style={{ fontFamily: 'var(--font-poppins)' }}>
+          Everything You Need, All in One Place
+        </h3>
+        <p className="text-gray-500 max-w-lg mx-auto">
+          From tracking meals to generating recipes to decoding ingredient labels — your complete gluten-free command center.
+        </p>
       </div>
 
       {/* Feature Cards */}
