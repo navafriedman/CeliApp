@@ -23,6 +23,7 @@ export default function DiaryPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     mealType: 'lunch',
     description: '',
@@ -96,6 +97,9 @@ export default function DiaryPage() {
     setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
     }
   };
 
@@ -185,17 +189,31 @@ export default function DiaryPage() {
           {/* Photo Upload Section */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              📸 Snap a photo of your food
+              📸 Add a photo of your food
             </label>
 
             {!imagePreview ? (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-teal-200 rounded-2xl p-8 text-center cursor-pointer hover:border-teal-400 hover:bg-teal-50/50 transition-all"
-              >
-                <div className="text-4xl mb-2">📷</div>
-                <p className="text-gray-500 text-sm">Tap to take a photo or upload an image</p>
-                <p className="text-gray-400 text-xs mt-1">AI will guess what you&apos;re eating!</p>
+              <div className="border-2 border-dashed border-teal-200 rounded-2xl p-6 text-center">
+                <div className="text-4xl mb-3">📷</div>
+                <p className="text-gray-500 text-sm mb-4">AI will analyze your food and suggest what it is!</p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="px-5 py-2.5 bg-teal-500 text-white rounded-xl font-medium hover:bg-teal-600 transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>📸</span>
+                    <span>Take Photo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-5 py-2.5 bg-white text-teal-600 border-2 border-teal-200 rounded-xl font-medium hover:bg-teal-50 hover:border-teal-300 transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>🖼️</span>
+                    <span>Upload Image</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="relative">
@@ -222,11 +240,20 @@ export default function DiaryPage() {
               </div>
             )}
 
+            {/* Camera input - for mobile devices */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            {/* File input - for desktop or choosing from gallery */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={handleImageSelect}
               className="hidden"
             />
