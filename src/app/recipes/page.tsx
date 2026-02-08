@@ -54,6 +54,7 @@ export default function RecipesPage() {
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [savingRecipe, setSavingRecipe] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -136,6 +137,31 @@ export default function RecipesPage() {
     await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
     setSelectedRecipe(null);
     fetchRecipes();
+  };
+
+  const handleShare = async (recipe: Recipe) => {
+    const url = `${window.location.origin}/recipes/${recipe.id}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: recipe.title,
+          text: `Check out this gluten-free recipe: ${recipe.title}`,
+          url,
+        });
+      } catch {
+        // User cancelled or share failed, fall back to clipboard
+        copyToClipboard(url);
+      }
+    } else {
+      copyToClipboard(url);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -735,6 +761,12 @@ export default function RecipesPage() {
                   }`}
                 >
                   {selectedRecipe.isFavorite ? '❤️ Favorited' : '🤍 Add to Favorites'}
+                </button>
+                <button
+                  onClick={() => handleShare(selectedRecipe)}
+                  className="px-6 py-3 rounded-xl bg-violet-50 text-violet-600 hover:bg-violet-100 font-medium transition-colors flex items-center gap-2"
+                >
+                  {copied ? '✓ Copied!' : '🔗 Share'}
                 </button>
                 <button
                   onClick={() => handleDelete(selectedRecipe.id)}

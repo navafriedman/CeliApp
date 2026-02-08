@@ -7,19 +7,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
     const prisma = await getPrisma();
     const { id } = await params;
 
-    // Can view own recipes or shared recipes
-    const recipe = await prisma.recipe.findFirst({
-      where: {
-        id,
-        OR: [
-          { userId: userId || undefined },
-          { userId: null },
-        ],
-      },
+    // Public endpoint - anyone can view any recipe by ID
+    const recipe = await prisma.recipe.findUnique({
+      where: { id },
     });
 
     if (!recipe) {
