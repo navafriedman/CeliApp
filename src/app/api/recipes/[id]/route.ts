@@ -104,19 +104,28 @@ export async function DELETE(
     const prisma = await getPrisma();
     const { id } = await params;
 
-    // Can only delete own recipes
-    const existing = await prisma.recipe.findFirst({
-      where: { id, userId },
-    });
+    const existing = await prisma.recipe.findUnique({ where: { id } });
     if (!existing) {
-      return NextResponse.json({ error: 'Recipe not found or not yours' }, { status: 404 });
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
 
-    await prisma.recipe.delete({
-      where: { id },
-    });
+    if (existing.userId === userId) {
+      // Hard delete own recipe
+      await prisma.recipe.delete({ where: { id } });
+      return NextResponse.json({ success: true, action: 'deleted' });
+    }
 
-    return NextResponse.json({ success: true });
+    if (existing.userId === null) {
+      // Seeded/shared recipe — hide it just for this user
+      await prisma.hiddenRecipe.upsert({
+        where: { userId_recipeId: { userId, recipeId: id } },
+        update: {},
+        create: { userId, recipeId: id },
+      });
+      return NextResponse.json({ success: true, action: 'hidden' });
+    }
+
+    return NextResponse.json({ error: 'Cannot delete this recipe' }, { status: 403 });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }

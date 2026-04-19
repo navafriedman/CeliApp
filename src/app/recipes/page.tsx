@@ -134,7 +134,12 @@ export default function RecipesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this recipe?')) return;
-    await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert('Failed to delete recipe: ' + (data.error || `HTTP ${res.status}`));
+      return;
+    }
     setSelectedRecipe(null);
     fetchRecipes();
   };
@@ -226,11 +231,16 @@ export default function RecipesPage() {
     }
   };
 
-  const filteredRecipes = recipes.filter((recipe) => {
-    if (filter === 'all') return true;
-    if (filter === 'favorites') return recipe.isFavorite;
-    return recipe.category === filter;
-  });
+  const filteredRecipes = recipes
+    .filter((recipe) => {
+      if (filter === 'all') return true;
+      if (filter === 'favorites') return recipe.isFavorite;
+      return recipe.category === filter;
+    })
+    .sort((a, b) => {
+      if (filter !== 'all') return 0;
+      return Number(b.isFavorite) - Number(a.isFavorite);
+    });
 
   if (loading) {
     return (

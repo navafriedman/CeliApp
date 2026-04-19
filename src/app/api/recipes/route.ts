@@ -10,7 +10,16 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const favorites = searchParams.get('favorites') === 'true';
 
-    // Show user's recipes + shared recipes (userId is null)
+    // Recipes hidden by this user (per-user soft-delete of seeded recipes)
+    const hidden = userId
+      ? await prisma.hiddenRecipe.findMany({
+          where: { userId },
+          select: { recipeId: true },
+        })
+      : [];
+    const hiddenIds = hidden.map((h) => h.recipeId);
+
+    // Show user's recipes + shared recipes (userId is null), excluding hidden
     const recipes = await prisma.recipe.findMany({
       where: {
         OR: [
@@ -19,6 +28,7 @@ export async function GET(request: NextRequest) {
         ],
         ...(category && { category }),
         ...(favorites && { isFavorite: true }),
+        ...(hiddenIds.length > 0 && { id: { notIn: hiddenIds } }),
       },
       orderBy: { createdAt: 'desc' },
     });

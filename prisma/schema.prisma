@@ -46,7 +46,20 @@ model Recipe {
   isFavorite   Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  hiddenBy     HiddenRecipe[]
 
+  @@index([userId])
+}
+
+// Per-user hiding for seeded/shared recipes the user doesn't want to see
+model HiddenRecipe {
+  id        String   @id @default(cuid())
+  userId    String   // Clerk user ID
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
   @@index([userId])
 }
 
