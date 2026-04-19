@@ -61,9 +61,8 @@ type YelpRestaurantDetails = {
   photos: string[];
   isOpenNow?: boolean;
   suggestedItems: SuggestedItem[];
-  dataSource?: 'menu_photo' | 'google_photos' | 'menu' | 'yelp_dishes' | 'yelp_menu' | 'yelp_website' | 'google_website' | 'none';
+  dataSource?: 'website' | 'google_photos' | 'none';
   dataSourceUrl?: string | null;
-  menuPhotosFound?: number;
   googlePhotosFound?: number;
 };
 
@@ -103,7 +102,7 @@ function RestaurantsPageContent() {
   const [yelpRestaurants, setYelpRestaurants] = useState<YelpRestaurant[]>([]);
   const [yelpLoading, setYelpLoading] = useState(false);
   const [yelpError, setYelpError] = useState<string | null>(null);
-  const [yelpOffset, setYelpOffset] = useState(0);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const [hasMoreYelp, setHasMoreYelp] = useState(false);
   const [searchLocation, setSearchLocation] = useState(initialLocation);
   const [searchTerm, setSearchTerm] = useState(initialTerm);
@@ -132,18 +131,14 @@ function RestaurantsPageContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, initialSearchDone]);
 
-  const fetchYelpRestaurantsWithParams = async (loc: string, term: string, offset = 0, append = false) => {
+  const fetchYelpRestaurantsWithParams = async (loc: string, term: string, pageToken: string | null = null, append = false) => {
     setYelpLoading(true);
     setYelpError(null);
 
     try {
-      const params = new URLSearchParams({
-        location: loc,
-        offset: offset.toString(),
-      });
-      if (term) {
-        params.set('term', term);
-      }
+      const params = new URLSearchParams({ location: loc });
+      if (term) params.set('term', term);
+      if (pageToken) params.set('pageToken', pageToken);
 
       const res = await fetch(`/api/restaurants/yelp?${params}`);
       const data = await res.json();
@@ -159,7 +154,7 @@ function RestaurantsPageContent() {
         setYelpRestaurants(data.restaurants || []);
       }
       setHasMoreYelp(data.hasMore || false);
-      setYelpOffset(offset);
+      setNextPageToken(data.nextPageToken || null);
     } catch {
       setYelpError('Failed to fetch restaurants');
     } finally {
@@ -184,9 +179,9 @@ function RestaurantsPageContent() {
     setLoading(false);
   };
 
-  const fetchYelpRestaurants = async (offset = 0, append = false) => {
+  const fetchYelpRestaurants = async (pageToken: string | null = null, append = false) => {
     // Use current state values
-    await fetchYelpRestaurantsWithParams(searchLocation, searchTerm, offset, append);
+    await fetchYelpRestaurantsWithParams(searchLocation, searchTerm, pageToken, append);
   };
 
   const fetchYelpDetails = async (yelpId: string) => {
@@ -753,8 +748,8 @@ function RestaurantsPageContent() {
               <div className="flex items-end">
                 <button
                   onClick={() => {
-                    setYelpOffset(0);
-                    fetchYelpRestaurants(0, false);
+                    setNextPageToken(null);
+                    fetchYelpRestaurants(null, false);
                   }}
                   disabled={yelpLoading}
                   className="w-full bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
@@ -764,7 +759,7 @@ function RestaurantsPageContent() {
               </div>
             </div>
             <p className="text-xs text-gray-500">
-              {searchTerm ? `Searching for "${searchTerm}" near ${searchLocation}` : 'Searching for vegetarian, vegan, and gluten-free friendly restaurants via Yelp'}
+              {searchTerm ? `Searching for "${searchTerm}" near ${searchLocation}` : 'Searching for vegetarian, vegan, and gluten-free friendly restaurants via Google Maps'}
             </p>
           </div>
 
@@ -774,12 +769,12 @@ function RestaurantsPageContent() {
               <p className="text-red-700">{yelpError}</p>
               {yelpError.includes('API key') && (
                 <div className="mt-3 text-sm text-red-600">
-                  <p className="font-medium">To set up Yelp API:</p>
+                  <p className="font-medium">To set up Google Places API:</p>
                   <ol className="list-decimal list-inside mt-1 space-y-1">
-                    <li>Go to <a href="https://www.yelp.com/developers/v3/manage_app" target="_blank" rel="noopener noreferrer" className="underline">Yelp Developer Portal</a></li>
-                    <li>Create an account or sign in</li>
-                    <li>Create a new app to get your API key</li>
-                    <li>Add <code className="bg-red-100 px-1 rounded">YELP_API_KEY=your_key</code> to <code className="bg-red-100 px-1 rounded">.env.local</code></li>
+                    <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="underline">Google Cloud Console</a></li>
+                    <li>Enable the Places API (New) for your project</li>
+                    <li>Create an API key</li>
+                    <li>Add <code className="bg-red-100 px-1 rounded">GOOGLE_PLACES_API_KEY=your_key</code> to <code className="bg-red-100 px-1 rounded">.env.local</code></li>
                     <li>Restart the dev server</li>
                   </ol>
                 </div>
@@ -842,7 +837,7 @@ function RestaurantsPageContent() {
                             rel="noopener noreferrer"
                             className="flex-1 text-center text-sm text-amber-600 border border-amber-300 py-1.5 rounded-lg hover:bg-amber-50"
                           >
-                            Yelp
+                            Maps
                           </a>
                           {isAlreadySaved(restaurant.name) ? (
                             <button
@@ -869,8 +864,8 @@ function RestaurantsPageContent() {
               {hasMoreYelp && (
                 <div className="text-center">
                   <button
-                    onClick={() => fetchYelpRestaurants(yelpOffset, true)}
-                    disabled={yelpLoading}
+                    onClick={() => fetchYelpRestaurants(nextPageToken, true)}
+                    disabled={yelpLoading || !nextPageToken}
                     className="bg-white border border-amber-300 text-amber-700 px-6 py-2 rounded-lg hover:bg-amber-50 disabled:opacity-50"
                   >
                     {yelpLoading ? 'Loading...' : 'Load More'}
@@ -937,16 +932,6 @@ function RestaurantsPageContent() {
                   <div className="border-t pt-4">
                     <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2 flex-wrap">
                       🥗 {selectedYelpRestaurant.dataSource === 'google_photos' ? 'Dish Types to Ask About' : 'Likely GF & Vegetarian Items'}
-                      {selectedYelpRestaurant.dataSource === 'menu_photo' && (
-                        <a
-                          href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-normal bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full hover:bg-violet-200 transition-colors cursor-pointer"
-                        >
-                          from menu photos ↗
-                        </a>
-                      )}
                       {selectedYelpRestaurant.dataSource === 'google_photos' && (
                         <a
                           href={selectedYelpRestaurant.dataSourceUrl || `https://www.google.com/maps/search/${encodeURIComponent(selectedYelpRestaurant.name)}`}
@@ -957,7 +942,7 @@ function RestaurantsPageContent() {
                           from food photos ↗
                         </a>
                       )}
-                      {(selectedYelpRestaurant.dataSource === 'menu' || selectedYelpRestaurant.dataSource === 'yelp_website' || selectedYelpRestaurant.dataSource === 'google_website') && (
+                      {selectedYelpRestaurant.dataSource === 'website' && (
                         <a
                           href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
                           target="_blank"
@@ -965,26 +950,6 @@ function RestaurantsPageContent() {
                           className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full hover:bg-green-200 transition-colors cursor-pointer"
                         >
                           from website menu ↗
-                        </a>
-                      )}
-                      {selectedYelpRestaurant.dataSource === 'yelp_menu' && (
-                        <a
-                          href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-normal bg-red-100 text-red-700 px-2 py-0.5 rounded-full hover:bg-red-200 transition-colors cursor-pointer"
-                        >
-                          from Yelp menu ↗
-                        </a>
-                      )}
-                      {selectedYelpRestaurant.dataSource === 'yelp_dishes' && (
-                        <a
-                          href={selectedYelpRestaurant.dataSourceUrl || selectedYelpRestaurant.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full hover:bg-amber-200 transition-colors cursor-pointer"
-                        >
-                          from Yelp ↗
                         </a>
                       )}
                     </h3>
@@ -1042,12 +1007,9 @@ function RestaurantsPageContent() {
                     <p className="text-xs text-gray-400 mt-4 italic">
                       * {selectedYelpRestaurant.dataSource === 'google_photos'
                         ? 'Dish types identified from food photos - not exact menu items. Ask staff for actual menu names and GF options.'
-                        : `Items analyzed by AI from ${
-                            selectedYelpRestaurant.dataSource === 'menu_photo' ? 'menu photos' :
-                            selectedYelpRestaurant.dataSource === 'yelp_menu' ? 'Yelp\'s menu page' :
-                            selectedYelpRestaurant.dataSource === 'menu' || selectedYelpRestaurant.dataSource === 'yelp_website' || selectedYelpRestaurant.dataSource === 'google_website' ? 'the restaurant\'s website' :
-                            'available data'
-                          }. Always confirm with the restaurant about ingredients and cross-contamination.`
+                        : selectedYelpRestaurant.dataSource === 'website'
+                        ? "Items analyzed by AI from the restaurant's website. Always confirm with the restaurant about ingredients and cross-contamination."
+                        : 'Always confirm with the restaurant about ingredients and cross-contamination.'
                       }
                     </p>
                   </div>
@@ -1059,7 +1021,7 @@ function RestaurantsPageContent() {
                       rel="noopener noreferrer"
                       className="flex-1 text-center py-2 border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50"
                     >
-                      View on Yelp
+                      View on Google Maps
                     </a>
                     <button
                       onClick={() => setSelectedYelpRestaurant(null)}

@@ -1,111 +1,156 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Yelp Fusion API endpoint
-const YELP_API_URL = 'https://api.yelp.com/v3/businesses/search';
+const PLACES_API_URL = 'https://places.googleapis.com/v1/places';
 
-interface YelpBusiness {
-  id: string;
+interface PlacePhoto {
   name: string;
-  image_url: string;
-  url: string;
-  review_count: number;
-  categories: { alias: string; title: string }[];
-  rating: number;
-  coordinates: { latitude: number; longitude: number };
-  price?: string;
-  location: {
-    address1: string;
-    address2?: string;
-    city: string;
-    state: string;
-    zip_code: string;
-    display_address: string[];
-  };
-  phone: string;
-  display_phone: string;
-  distance?: number;
 }
 
-interface YelpResponse {
-  businesses: YelpBusiness[];
-  total: number;
+interface Place {
+  id: string;
+  displayName?: { text: string };
+  formattedAddress?: string;
+  nationalPhoneNumber?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
+  rating?: number;
+  userRatingCount?: number;
+  priceLevel?: string;
+  photos?: PlacePhoto[];
+  primaryTypeDisplayName?: { text: string };
+  primaryType?: string;
+  types?: string[];
+}
+
+interface SearchTextResponse {
+  places?: Place[];
+  nextPageToken?: string;
+}
+
+const PRICE_LEVEL_MAP: Record<string, string> = {
+  PRICE_LEVEL_INEXPENSIVE: '$',
+  PRICE_LEVEL_MODERATE: '$$',
+  PRICE_LEVEL_EXPENSIVE: '$$$',
+  PRICE_LEVEL_VERY_EXPENSIVE: '$$$$',
+};
+
+function formatPlaceType(place: Place): string {
+  if (place.primaryTypeDisplayName?.text) return place.primaryTypeDisplayName.text;
+  const primary =
+    place.primaryType ||
+    place.types?.find((t) => t.endsWith('_restaurant')) ||
+    place.types?.[0];
+  if (!primary) return '';
+  return primary
+    .replace(/_restaurant$/i, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+async function fetchPhotoUrl(photoName: string, apiKey: string): Promise<string | null> {
+  try {
+    const url = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=400&maxWidthPx=600&skipHttpRedirect=true&key=${apiKey}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.photoUri || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(request: NextRequest) {
-  const apiKey = process.env.YELP_API_KEY;
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'Yelp API key not configured. Add YELP_API_KEY to your .env.local file.' },
+      { error: 'Google Places API key not configured. Add GOOGLE_PLACES_API_KEY to your .env.local file.' },
       { status: 500 }
     );
   }
 
   const searchParams = request.nextUrl.searchParams;
-  const location = searchParams.get('location') || '11216'; // Default to user's zip
-  const offset = searchParams.get('offset') || '0';
-  const searchTerm = searchParams.get('term') || ''; // Restaurant name search
+  const location = searchParams.get('location') || '11216';
+  const term = searchParams.get('term') || '';
+  const pageToken = searchParams.get('pageToken') || '';
+
+  const textQuery = term
+    ? `${term} near ${location}`
+    : `gluten free vegetarian vegan restaurants near ${location}`;
 
   try {
-    // Build search params
-    const params = new URLSearchParams({
-      location,
-      limit: '20',
-      offset,
-      sort_by: 'rating',
-    });
+    const body: Record<string, unknown> = {
+      textQuery,
+      pageSize: 20,
+    };
+    if (pageToken) body.pageToken = pageToken;
 
-    // If searching for a specific restaurant, use that term
-    // Otherwise default to GF-friendly categories
-    if (searchTerm) {
-      params.set('term', searchTerm);
-    } else {
-      params.set('term', 'gluten free vegetarian vegan');
-      params.set('categories', 'vegetarian,vegan,glutenfree,healthfood,juicebars,raw_food');
-    }
-
-    const response = await fetch(`${YELP_API_URL}?${params}`, {
+    const response = await fetch(`${PLACES_API_URL}:searchText`, {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': [
+          'places.id',
+          'places.displayName',
+          'places.formattedAddress',
+          'places.nationalPhoneNumber',
+          'places.websiteUri',
+          'places.googleMapsUri',
+          'places.rating',
+          'places.userRatingCount',
+          'places.priceLevel',
+          'places.photos',
+          'places.primaryTypeDisplayName',
+          'places.primaryType',
+          'places.types',
+          'nextPageToken',
+        ].join(','),
       },
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error('Yelp API error:', error);
+      const errText = await response.text();
+      console.error('Google Places API error:', errText);
       return NextResponse.json(
-        { error: error.error?.description || 'Failed to fetch from Yelp' },
+        { error: 'Failed to fetch from Google Places' },
         { status: response.status }
       );
     }
 
-    const data: YelpResponse = await response.json();
+    const data: SearchTextResponse = await response.json();
+    const places = data.places || [];
 
-    // Transform Yelp results to our app's format
-    const restaurants = data.businesses.map((biz) => ({
-      yelpId: biz.id,
-      name: biz.name,
-      address: biz.location.display_address.join(', '),
-      phone: biz.display_phone,
-      website: biz.url,
-      cuisineType: biz.categories.map(c => c.title).join(', '),
-      rating: biz.rating,
-      reviewCount: biz.review_count,
-      price: biz.price,
-      imageUrl: biz.image_url,
-      distance: biz.distance,
-    }));
+    // Fetch first-photo URL for each place in parallel
+    const restaurants = await Promise.all(
+      places.map(async (place) => {
+        const firstPhoto = place.photos?.[0]?.name;
+        const imageUrl = firstPhoto ? await fetchPhotoUrl(firstPhoto, apiKey) : null;
+        return {
+          yelpId: place.id,
+          name: place.displayName?.text || '',
+          address: place.formattedAddress || '',
+          phone: place.nationalPhoneNumber || '',
+          website: place.googleMapsUri || place.websiteUri || '',
+          cuisineType: formatPlaceType(place),
+          rating: place.rating || 0,
+          reviewCount: place.userRatingCount || 0,
+          price: place.priceLevel ? PRICE_LEVEL_MAP[place.priceLevel] : undefined,
+          imageUrl: imageUrl || '',
+        };
+      })
+    );
 
     return NextResponse.json({
       restaurants,
-      total: data.total,
-      hasMore: parseInt(offset) + 20 < data.total,
+      hasMore: Boolean(data.nextPageToken),
+      nextPageToken: data.nextPageToken || null,
     });
   } catch (error) {
-    console.error('Yelp API error:', error);
+    console.error('Google Places API error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch restaurants from Yelp' },
+      { error: 'Failed to fetch restaurants' },
       { status: 500 }
     );
   }
